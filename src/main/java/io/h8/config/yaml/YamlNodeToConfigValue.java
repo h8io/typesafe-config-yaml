@@ -91,10 +91,14 @@ final class YamlNodeToConfigValue {
 
     private static double parseYamlFloat(String value) {
         switch (value) {
-            case ".inf":  return Double.POSITIVE_INFINITY;
-            case "-.inf": return Double.NEGATIVE_INFINITY;
-            case ".nan":  return Double.NaN;
-            default:      return Double.parseDouble(value);
+            case ".inf":
+                return Double.POSITIVE_INFINITY;
+            case "-.inf":
+                return Double.NEGATIVE_INFINITY;
+            case ".nan":
+                return Double.NaN;
+            default:
+                return Double.parseDouble(value);
         }
     }
 

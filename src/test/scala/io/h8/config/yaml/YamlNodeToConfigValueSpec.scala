@@ -11,10 +11,10 @@ import org.snakeyaml.engine.v2.scanner.StreamReader
 
 class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   private val converter = YamlNodeToConfigValue.DEFAULT
-  private val settings  = LoadSettings.builder().build()
+  private val settings = LoadSettings.builder().build()
 
   private def compose(text: String): Node = {
-    val parser   = new ParserImpl(settings, new StreamReader(settings, text))
+    val parser = new ParserImpl(settings, new StreamReader(settings, text))
     val composer = new Composer(settings, parser)
     composer.getSingleNode.orElse(null)
   }
