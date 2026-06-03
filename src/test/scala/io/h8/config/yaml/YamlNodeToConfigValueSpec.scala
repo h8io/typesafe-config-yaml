@@ -135,7 +135,7 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "expand merge key" in {
     val cfg = convert(
       "base: &base\n  x: 1\n  y: 2\n" +
-      "child:\n  <<: *base\n  z: 3\n"
+        "child:\n  <<: *base\n  z: 3\n"
     ).asInstanceOf[ConfigObject].toConfig
     cfg.getLong("child.x") shouldBe 1L
     cfg.getLong("child.y") shouldBe 2L
@@ -145,7 +145,7 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "let explicit key override merge key" in {
     val cfg = convert(
       "base: &base\n  x: 1\n" +
-      "child:\n  <<: *base\n  x: 99\n"
+        "child:\n  <<: *base\n  x: 99\n"
     ).asInstanceOf[ConfigObject].toConfig
     cfg.getLong("child.x") shouldBe 99L
   }
@@ -153,7 +153,7 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "let explicit key before << override merge key" in {
     val cfg = convert(
       "base: &base\n  x: 1\n" +
-      "child:\n  x: 99\n  <<: *base\n"
+        "child:\n  x: 99\n  <<: *base\n"
     ).asInstanceOf[ConfigObject].toConfig
     cfg.getLong("child.x") shouldBe 99L
   }
@@ -161,8 +161,8 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "expand sequence merge key" in {
     val cfg = convert(
       "a: &a\n  x: 1\n" +
-      "b: &b\n  y: 2\n" +
-      "child:\n  <<: [*a, *b]\n  z: 3\n"
+        "b: &b\n  y: 2\n" +
+        "child:\n  <<: [*a, *b]\n  z: 3\n"
     ).asInstanceOf[ConfigObject].toConfig
     cfg.getLong("child.x") shouldBe 1L
     cfg.getLong("child.y") shouldBe 2L
@@ -172,8 +172,8 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "give first entry priority in sequence merge key" in {
     val cfg = convert(
       "a: &a\n  x: 1\n" +
-      "b: &b\n  x: 2\n" +
-      "child:\n  <<: [*a, *b]\n"
+        "b: &b\n  x: 2\n" +
+        "child:\n  <<: [*a, *b]\n"
     ).asInstanceOf[ConfigObject].toConfig
     cfg.getLong("child.x") shouldBe 1L
   }
