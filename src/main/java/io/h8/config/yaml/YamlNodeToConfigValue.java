@@ -1,8 +1,7 @@
 package io.h8.config.yaml;
 
 import com.typesafe.config.*;
-import org.yaml.snakeyaml.error.Mark;
-import org.yaml.snakeyaml.nodes.*;
+import org.snakeyaml.engine.v2.nodes.*;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,36 +43,15 @@ final class YamlNodeToConfigValue {
 
     private ConfigObject convert(MappingNode node, int depth) {
         Map<String, ConfigValue> values = new LinkedHashMap<>();
-        List<NodeTuple> merges = new ArrayList<>();
         for (NodeTuple tuple : node.getValue()) {
             Node keyNode = tuple.getKeyNode();
             if (!(keyNode instanceof ScalarNode))
                 throw new ConfigException.Parse(origin(keyNode), "YAML mapping key must be a scalar");
-            ScalarNode keyScalar = (ScalarNode) keyNode;
-            if (Tag.MERGE.equals(keyScalar.getTag())) {
-                merges.add(tuple);
-            } else {
-                ConfigValue incoming = convert(tuple.getValueNode(), depth + 1);
-                values.compute(keyScalar.getValue(), (k, existing) -> existing == null ? incoming : mergeValues(existing, incoming));
-            }
-        }
-        for (NodeTuple merge : merges) {
-            applyMerge(merge.getValueNode(), depth, values);
+            String key = ((ScalarNode) keyNode).getValue();
+            ConfigValue incoming = convert(tuple.getValueNode(), depth + 1);
+            values.compute(key, (k, existing) -> existing == null ? incoming : mergeValues(existing, incoming));
         }
         return ConfigValueFactory.fromMap(values, origin(node).description());
-    }
-
-    private void applyMerge(Node valueNode, int depth, Map<String, ConfigValue> target) {
-        if (valueNode instanceof MappingNode) {
-            convert((MappingNode) valueNode, depth).forEach(target::putIfAbsent);
-        } else if (valueNode instanceof SequenceNode) {
-            for (Node item : ((SequenceNode) valueNode).getValue()) {
-                applyMerge(item, depth, target);
-            }
-        } else {
-            throw new ConfigException.Parse(origin(valueNode),
-                    "YAML merge value must be a mapping or sequence of mappings");
-        }
     }
 
     private static ConfigValue mergeValues(ConfigValue existing, ConfigValue incoming) {
@@ -101,9 +79,9 @@ final class YamlNodeToConfigValue {
             case "tag:yaml.org,2002:null":
                 return null;
             case "tag:yaml.org,2002:bool":
-                return isYamlTrue(value);
+                return "true".equalsIgnoreCase(value);
             case "tag:yaml.org,2002:int":
-                return parseYamlInt(value);
+                return Long.parseLong(value);
             case "tag:yaml.org,2002:float":
                 return parseYamlFloat(value);
             default:
@@ -111,37 +89,19 @@ final class YamlNodeToConfigValue {
         }
     }
 
-    private static boolean isYamlTrue(String value) {
-        String lc = value.toLowerCase();
-        return "true".equals(lc) || "yes".equals(lc) || "on".equals(lc) || "y".equals(lc);
-    }
-
-    private static long parseYamlInt(String value) {
-        if (value.startsWith("0x") || value.startsWith("0X"))
-            return Long.parseLong(value.substring(2), 16);
-        if (value.startsWith("0o") || value.startsWith("0O"))
-            return Long.parseLong(value.substring(2), 8);
-        return Long.parseLong(value);
-    }
-
     private static double parseYamlFloat(String value) {
         switch (value) {
-            case ".inf":
-            case "+.inf":
-                return Double.POSITIVE_INFINITY;
-            case "-.inf":
-                return Double.NEGATIVE_INFINITY;
-            case ".nan":
-                return Double.NaN;
-            default:
-                return Double.parseDouble(value);
+            case ".inf":  return Double.POSITIVE_INFINITY;
+            case "-.inf": return Double.NEGATIVE_INFINITY;
+            case ".nan":  return Double.NaN;
+            default:      return Double.parseDouble(value);
         }
     }
 
     private static ConfigOrigin origin(Node node) {
         if (node == null) return DEFAULT_ORIGIN;
-        Mark mark = node.getStartMark();
-        if (mark == null) return DEFAULT_ORIGIN;
-        return ConfigOriginFactory.newSimple(mark.toString()).withLineNumber(mark.getLine() + 1);
+        return node.getStartMark()
+                .map(mark -> DEFAULT_ORIGIN.withLineNumber(mark.getLine() + 1))
+                .orElse(DEFAULT_ORIGIN);
     }
 }

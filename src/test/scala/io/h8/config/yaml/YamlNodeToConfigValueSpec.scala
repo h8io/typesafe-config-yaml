@@ -3,16 +3,24 @@ package io.h8.config.yaml
 import com.typesafe.config._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.yaml.snakeyaml.Yaml
-
-import java.io.StringReader
+import org.snakeyaml.engine.v2.api.LoadSettings
+import org.snakeyaml.engine.v2.composer.Composer
+import org.snakeyaml.engine.v2.nodes.Node
+import org.snakeyaml.engine.v2.parser.ParserImpl
+import org.snakeyaml.engine.v2.scanner.StreamReader
 
 class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   private val converter = YamlNodeToConfigValue.DEFAULT
-  private val yaml = new Yaml()
+  private val settings  = LoadSettings.builder().build()
+
+  private def compose(text: String): Node = {
+    val parser   = new ParserImpl(settings, new StreamReader(settings, text))
+    val composer = new Composer(settings, parser)
+    composer.getSingleNode.orElse(null)
+  }
 
   private def convert(text: String): ConfigValue =
-    converter.convert(yaml.compose(new StringReader(text)))
+    converter.convert(compose(text))
 
   // --- null ---
 
@@ -20,9 +28,8 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
     converter.convert(null).unwrapped() shouldBe null
   }
 
-  it should "return null for null/~ scalars" in {
+  it should "return null for null scalar" in {
     convert("null").unwrapped() shouldBe null
-    convert("~").unwrapped() shouldBe null
   }
 
   // --- bool ---
@@ -32,11 +39,11 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
     convert("false").unwrapped() shouldBe false
   }
 
-  it should "parse yes/no/on/off as booleans (YAML 1.1 resolver)" in {
-    convert("yes").unwrapped() shouldBe true
-    convert("on").unwrapped() shouldBe true
-    convert("no").unwrapped() shouldBe false
-    convert("off").unwrapped() shouldBe false
+  it should "keep yes/no/on/off as strings (YAML 1.2)" in {
+    convert("yes").unwrapped() shouldBe "yes"
+    convert("no").unwrapped() shouldBe "no"
+    convert("on").unwrapped() shouldBe "on"
+    convert("off").unwrapped() shouldBe "off"
   }
 
   // --- int ---
@@ -44,11 +51,6 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "parse decimal integers" in {
     convert("42").unwrapped() shouldBe 42L
     convert("-1").unwrapped() shouldBe -1L
-  }
-
-  it should "parse hex integers" in {
-    convert("0xFF").unwrapped() shouldBe 255L
-    convert("0xff").unwrapped() shouldBe 255L
   }
 
   it should "throw on integer overflow" in {
@@ -63,7 +65,6 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
 
   it should "parse special float values" in {
     convert(".inf").unwrapped() shouldBe Double.PositiveInfinity
-    convert("+.inf").unwrapped() shouldBe Double.PositiveInfinity
     convert("-.inf").unwrapped() shouldBe Double.NegativeInfinity
     convert(".nan").unwrapped().asInstanceOf[Double].isNaN shouldBe true
   }
@@ -103,7 +104,7 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "throw on exceeded depth" in {
     val shallow = new YamlNodeToConfigValue(1)
     a[ConfigException.Parse] should be thrownBy
-      shallow.convert(yaml.compose(new StringReader("a:\n  b: 1")))
+      shallow.convert(compose("a:\n  b: 1"))
   }
 
   // --- duplicate keys ---
@@ -128,53 +129,5 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
 
   it should "overwrite scalar with object when object comes last" in {
     convert("a: 42\na:\n  x: 1").asInstanceOf[ConfigObject].toConfig.getLong("a.x") shouldBe 1L
-  }
-
-  // --- merge key << ---
-
-  it should "expand merge key" in {
-    val cfg = convert(
-      "base: &base\n  x: 1\n  y: 2\n" +
-        "child:\n  <<: *base\n  z: 3\n"
-    ).asInstanceOf[ConfigObject].toConfig
-    cfg.getLong("child.x") shouldBe 1L
-    cfg.getLong("child.y") shouldBe 2L
-    cfg.getLong("child.z") shouldBe 3L
-  }
-
-  it should "let explicit key override merge key" in {
-    val cfg = convert(
-      "base: &base\n  x: 1\n" +
-        "child:\n  <<: *base\n  x: 99\n"
-    ).asInstanceOf[ConfigObject].toConfig
-    cfg.getLong("child.x") shouldBe 99L
-  }
-
-  it should "let explicit key before << override merge key" in {
-    val cfg = convert(
-      "base: &base\n  x: 1\n" +
-        "child:\n  x: 99\n  <<: *base\n"
-    ).asInstanceOf[ConfigObject].toConfig
-    cfg.getLong("child.x") shouldBe 99L
-  }
-
-  it should "expand sequence merge key" in {
-    val cfg = convert(
-      "a: &a\n  x: 1\n" +
-        "b: &b\n  y: 2\n" +
-        "child:\n  <<: [*a, *b]\n  z: 3\n"
-    ).asInstanceOf[ConfigObject].toConfig
-    cfg.getLong("child.x") shouldBe 1L
-    cfg.getLong("child.y") shouldBe 2L
-    cfg.getLong("child.z") shouldBe 3L
-  }
-
-  it should "give first entry priority in sequence merge key" in {
-    val cfg = convert(
-      "a: &a\n  x: 1\n" +
-        "b: &b\n  x: 2\n" +
-        "child:\n  <<: [*a, *b]\n"
-    ).asInstanceOf[ConfigObject].toConfig
-    cfg.getLong("child.x") shouldBe 1L
   }
 }
