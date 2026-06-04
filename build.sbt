@@ -1,5 +1,7 @@
 ThisBuild / organization := "io.h8"
 
+ThisBuild / scalaVersion := "3.3.7"
+
 ThisBuild / crossPaths := false
 ThisBuild / autoScalaLibrary := false
 
@@ -12,6 +14,8 @@ lazy val root = (project in file("."))
     libraryDependencies ++= Seq(
       "com.typesafe" % "config" % "1.4.8",
       "org.snakeyaml" % "snakeyaml-engine" % "3.0.1",
-      "org.scalatest" % "scalatest_2.12" % "3.2.20" % Test
-    )
+      "org.scalatest" %% "scalatest" % "3.2.20" % Test
+    ),
+
+    dependencyOverrides += "org.scala-lang" %% "scala3-library" % scalaVersion.value
   )

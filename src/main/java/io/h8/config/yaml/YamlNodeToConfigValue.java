@@ -24,9 +24,6 @@ final class YamlNodeToConfigValue {
     }
 
     ConfigValue convert(Node node) {
-        if (node == null) {
-            return ConfigValueFactory.fromAnyRef(null, DEFAULT_ORIGIN.description());
-        }
         return convert(node, 1);
     }
 
