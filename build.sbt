@@ -4,7 +4,7 @@ val ProjectName = "typesafe-config-yaml"
 
 ThisBuild / organization := "io.h8"
 ThisBuild / organizationName := "H8IO"
-ThisBuild / organizationHomepage := Some(url(s"https://github.com/h8io/$ProjectName"))
+ThisBuild / organizationHomepage := Some(url(s"https://github.com/h8io"))
 ThisBuild / homepage := Some(url(s"https://github.com/h8io/$ProjectName"))
 
 ThisBuild / scmInfo := Some(
