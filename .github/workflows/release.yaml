@@ -1,0 +1,16 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  snapshot:
+    secrets: inherit
+    uses: h8io/gha/.github/workflows/release.yaml@v3
+    with:
+      java-version: 17
