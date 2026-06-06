@@ -15,3 +15,4 @@ jobs:
     uses: h8io/gha/.github/workflows/test.yaml@v3
     with:
       timeout-minutes: 5
+      publish-scoverage-summary: false
