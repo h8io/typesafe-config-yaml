@@ -68,15 +68,14 @@ YamlConfigFactory factory = new YamlConfigFactory(settings, 64);
 
 ## Including YAML from HOCON — `YamlConfigIncluder`
 
-`YamlConfigIncluder` implements `ConfigIncluder` / `ConfigIncluderFile` /
-`ConfigIncluderClasspath` / `ConfigIncluderURL`. Files with a `.yaml` or
-`.yml` extension are handled by the library; everything else is forwarded to
-the default HOCON/JSON/properties includer.
+`YamlConfigIncluder` implements `ConfigIncluder` / `ConfigIncluderFile` / `ConfigIncluderClasspath` /
+`ConfigIncluderURL`. Files with a `.yaml` or `.yml` extension are handled by the library; everything else is forwarded
+to the default HOCON/JSON/properties includer.
 
 ### Wiring into the parse pipeline
 
-Use `prependIncluder` so that the YAML includer is tried first and the default
-includer becomes its fallback automatically:
+Use `prependIncluder` so that the YAML includer is tried first and the default  includer becomes its fallback
+automatically:
 
 ```java
 ConfigParseOptions opts = ConfigParseOptions.defaults()
@@ -91,8 +90,8 @@ Config cfg = ConfigFactory.parseResources("application.conf", opts);
 
 ### Priority: position of `include` determines precedence
 
-In HOCON, later assignments override earlier ones. The position of an
-`include` directive controls its priority relative to the surrounding file.
+In HOCON, later assignments override earlier ones. The position of an `include` directive controls its priority relative
+to the surrounding file.
 
 **YAML as defaults** — include first, then selectively override:
 
@@ -114,8 +113,8 @@ include "overrides.yaml"  # server.port from the YAML file wins
 
 ### Multi-format priority chain
 
-All four formats can be layered. The last `include` has the highest priority
-among includes; an inline definition after all includes beats them all.
+All four formats can be layered. The last `include` has the highest priority among includes; an inline definition after
+all includes beats them all.
 
 ```hocon
 # application.conf
@@ -133,13 +132,11 @@ database.port: 5432
 shared-key: from-yaml
 ```
 
-Result: `database.host` and `database.port` come from YAML; `shared-key` is
-`"from-main"`.
+Result: `database.host` and `database.port` come from YAML; `shared-key` is `"from-main"`.
 
 ### Multi-document YAML in an include
 
-When an included YAML file contains multiple documents, they are merged
-with the **first document taking priority**:
+When an included YAML file contains multiple documents, they are merged with the **first document taking priority**:
 
 ```yaml
 # layered.yaml
@@ -155,13 +152,11 @@ include "layered.yaml"
 # database.timeout   = 30s
 ```
 
-`null` documents are silently skipped. A document that is a sequence or
-scalar causes `ConfigException.Parse`.
+`null` documents are silently skipped. A document that is a sequence or scalar causes `ConfigException.Parse`.
 
 ### Custom factory in the includer
 
-Pass a custom `YamlConfigFactory` to apply depth limits or custom
-`LoadSettings` to every YAML file that is included:
+Pass a custom `YamlConfigFactory` to apply depth limits or custom `LoadSettings` to every YAML file that is included:
 
 ```java
 YamlConfigFactory factory = new YamlConfigFactory(settings, 32);
@@ -183,19 +178,20 @@ ConfigParseOptions opts = ConfigParseOptions.defaults()
 
 ## Limitations
 
-**Custom tags** are not supported. Only the YAML 1.2 Core Schema tags listed
-above are converted to their Java counterparts. Any other tag
-(`!!timestamp`, `!!binary`, application-specific tags, etc.) is treated as a
+**Custom tags** are not supported. Only the YAML 1.2 Core Schema tags listed above are converted
+to their Java counterparts. Any other tag (`!!timestamp`, `!!binary`, application-specific tags, etc.) is treated as a
 plain string.
 
-**Recursive aliases** are rejected. A YAML anchor that refers back to a
-parent node (creating a cycle) causes `ConfigException.Parse`. This is the
-snakeyaml-engine default and is intentional — cycles cannot be represented in
+**Recursive aliases** are rejected. A YAML anchor that refers back to a parent node (creating a cycle) causes
+`ConfigException.Parse`. This is the snakeyaml-engine default and is intentional — cycles cannot be represented in
 typesafe-config's immutable value model.
 
-**Relative filesystem paths in `include`** are not resolved. An unqualified
-`include "file.yaml"` looks up the resource on the classpath and, if not
-found there, treats `file.yaml` as a literal (possibly absolute) filesystem
-path. To include a YAML file by path relative to the including `.conf` file
-use the qualified form `include file("/absolute/path/to/file.yaml")` or place
-the YAML file on the classpath.
+**Relative paths in `include`** are resolved in this order:
+
+1. Relative to the including file's location (via `ConfigIncludeContext.relativeTo`). Works when the host `.conf` is 
+   parsed from a filesystem file or a classpath resource.
+2. Classpath lookup by name.
+3. Absolute or CWD-relative filesystem path.
+
+When parsing from `ConfigFactory.parseString(...)` there is no file origin, so step 1 is skipped,
+and only classpath / absolute paths are tried.

@@ -111,6 +111,24 @@ class YamlConfigIntegrationSpec extends AnyFlatSpec with Matchers {
     cfg.getString("hocon-key") shouldBe "from-hocon"
   }
 
+  it should "resolve YAML path relative to the including .conf file" in {
+    val dir = java.nio.file.Files.createTempDirectory("yaml-rel-test")
+    val yaml = dir.resolve("rel.yaml").toFile
+    val conf = dir.resolve("main.conf").toFile
+    java.nio.file.Files.write(yaml.toPath, "rel-key: from-relative-yaml\n".getBytes)
+    java.nio.file.Files.write(conf.toPath,
+      "include \"rel.yaml\"\nconf-key = from-conf\n".getBytes)
+    try {
+      val cfg = ConfigFactory.parseFile(conf, opts)
+      cfg.getString("rel-key") shouldBe "from-relative-yaml"
+      cfg.getString("conf-key") shouldBe "from-conf"
+    } finally {
+      yaml.delete(): Unit
+      conf.delete(): Unit
+      dir.toFile.delete(): Unit
+    }
+  }
+
   it should "sandwich YAML between lower and higher priority includes" in {
     // JSON (lowest) → YAML (middle) → HOCON (highest)
     val cfg = parse(

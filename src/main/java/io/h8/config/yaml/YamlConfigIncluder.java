@@ -32,7 +32,9 @@ import java.util.Objects;
 public final class YamlConfigIncluder
         implements ConfigIncluder, ConfigIncluderFile, ConfigIncluderClasspath, ConfigIncluderURL {
 
-    /** Default includer backed by {@link YamlConfigFactory#DEFAULT}. */
+    /**
+     * Default includer backed by {@link YamlConfigFactory#DEFAULT}.
+     */
     public static final YamlConfigIncluder DEFAULT = new YamlConfigIncluder(YamlConfigFactory.DEFAULT);
 
     private final YamlConfigFactory factory;
@@ -80,10 +82,20 @@ public final class YamlConfigIncluder
     public ConfigObject include(ConfigIncludeContext context, String what) {
         if (!isYaml(what)) return delegateInclude(context, what);
 
+        // 1. Context-relative resolution: handles paths relative to the including file
+        ConfigParseable relative = context.relativeTo(what);
+        if (relative != null) {
+            URL relativeUrl = relative.origin().url();
+            if (relativeUrl != null && isAccessible(relativeUrl))
+                return parseAndMerge(relativeUrl, ConfigOriginFactory.newURL(relativeUrl));
+        }
+
+        // 2. Classpath lookup by name
         ClassLoader loader = classLoader(context);
         URL url = loader.getResource(what);
         if (url != null) return parseAndMerge(url, ConfigOriginFactory.newURL(url));
 
+        // 3. Absolute or CWD-relative file
         File file = new File(what);
         if (file.isFile()) return parseAndMerge(file, ConfigOriginFactory.newFile(file.getPath()));
 
@@ -195,6 +207,10 @@ public final class YamlConfigIncluder
         return fallback instanceof ConfigIncluderURL
                 ? ((ConfigIncluderURL) fallback).includeURL(context, url)
                 : empty();
+    }
+
+    private static boolean isAccessible(URL url) {
+        return !"file".equals(url.getProtocol()) || new File(url.getFile()).isFile();
     }
 
     private static boolean isYaml(String name) {
