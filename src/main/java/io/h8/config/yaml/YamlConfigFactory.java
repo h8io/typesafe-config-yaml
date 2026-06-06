@@ -13,10 +13,12 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Parses YAML sources into lists of {@link ConfigValue} instances.
@@ -188,11 +190,10 @@ public final class YamlConfigFactory {
         ConfigOrigin origin = ConfigOriginFactory.newSimple(originDesc);
         try {
             Composer composer = new Composer(settings, new ParserImpl(settings, stream));
-            List<ConfigValue> result = new ArrayList<>();
-            while (composer.hasNext()) {
-                result.add(converter.apply(composer.next()));
-            }
-            return Collections.unmodifiableList(result);
+            return StreamSupport
+                    .stream(Spliterators.spliteratorUnknownSize(composer, Spliterator.ORDERED), false)
+                    .map(converter)
+                    .collect(Collectors.toUnmodifiableList());
         } catch (YamlEngineException e) {
             throw new ConfigException.Parse(origin, e.getMessage(), e);
         }
