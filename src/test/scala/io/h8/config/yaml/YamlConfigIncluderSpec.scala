@@ -287,9 +287,9 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   "YamlConfigIncluder(YamlConfigFactory)" should "use the provided factory's depth limit" in {
     val shallow = new YamlConfigIncluder(new YamlConfigFactory(1))
     val file = writeTemp("a:\n  b: 1")
-    try {
+    try
       a[ConfigException.Parse] should be thrownBy shallow.includeFile(ctx(), file)
-    } finally { file.delete(): Unit }
+    finally file.delete(): Unit
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────
