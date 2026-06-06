@@ -82,7 +82,7 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   "includeFile" should "parse a YAML file" in {
     val file = writeTemp("x: 10\ny: 20")
     try {
-      val result = new YamlConfigIncluder().includeFile(ctx(), file).toConfig
+      val result = YamlConfigIncluder.DEFAULT.includeFile(ctx(), file).toConfig
       result.getInt("x") shouldBe 10
       result.getInt("y") shouldBe 20
     } finally file.delete(): Unit
@@ -91,7 +91,7 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   it should "merge multi-document YAML, first wins" in {
     val file = writeTemp("a: 1\n---\na: 99\nb: 2")
     try {
-      val result = new YamlConfigIncluder().includeFile(ctx(), file).toConfig
+      val result = YamlConfigIncluder.DEFAULT.includeFile(ctx(), file).toConfig
       result.getInt("a") shouldBe 1
       result.getInt("b") shouldBe 2
     } finally file.delete(): Unit
@@ -100,33 +100,33 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   it should "return empty for an empty file" in {
     val file = writeTemp("")
     try
-      new YamlConfigIncluder().includeFile(ctx(), file).isEmpty shouldBe true
+      YamlConfigIncluder.DEFAULT.includeFile(ctx(), file).isEmpty shouldBe true
     finally file.delete(): Unit
   }
 
   it should "return empty for a null-only document" in {
     val file = writeTemp("null")
     try
-      new YamlConfigIncluder().includeFile(ctx(), file).isEmpty shouldBe true
+      YamlConfigIncluder.DEFAULT.includeFile(ctx(), file).isEmpty shouldBe true
     finally file.delete(): Unit
   }
 
   it should "throw on a list root" in {
     val file = writeTemp("- 1\n- 2")
     try
-      a[ConfigException.Parse] should be thrownBy new YamlConfigIncluder().includeFile(ctx(), file)
+      a[ConfigException.Parse] should be thrownBy YamlConfigIncluder.DEFAULT.includeFile(ctx(), file)
     finally file.delete(): Unit
   }
 
   it should "return empty for missing file when allowMissing=true" in {
-    new YamlConfigIncluder()
+    YamlConfigIncluder.DEFAULT
       .includeFile(ctx(allowMissing = true), new File("/no/such/file.yaml"))
       .isEmpty shouldBe true
   }
 
   it should "throw for missing file when allowMissing=false" in {
     a[ConfigException.IO] should be thrownBy
-      new YamlConfigIncluder().includeFile(ctx(allowMissing = false), new File("/no/such/file.yaml"))
+      YamlConfigIncluder.DEFAULT.includeFile(ctx(allowMissing = false), new File("/no/such/file.yaml"))
   }
 
   it should "delegate non-YAML files to fallback" in {
@@ -140,33 +140,33 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
       }
     }
     val file = new File("config.conf")
-    new YamlConfigIncluder().withFallback(fb).asInstanceOf[ConfigIncluderFile].includeFile(ctx(), file)
+    YamlConfigIncluder.DEFAULT.withFallback(fb).asInstanceOf[ConfigIncluderFile].includeFile(ctx(), file)
     called.get() shouldBe true
   }
 
   // ── includeResources ───────────────────────────────────────────────────────
 
   "includeResources" should "load a classpath YAML resource" in {
-    val result = new YamlConfigIncluder()
+    val result = YamlConfigIncluder.DEFAULT
       .includeResources(ctx(), "test-resource.yaml").toConfig
     result.getString("resource") shouldBe "ok"
   }
 
   it should "return empty for missing resource when allowMissing=true" in {
-    new YamlConfigIncluder()
+    YamlConfigIncluder.DEFAULT
       .includeResources(ctx(allowMissing = true), "no-such.yaml")
       .isEmpty shouldBe true
   }
 
   it should "throw for missing resource when allowMissing=false" in {
     a[ConfigException.IO] should be thrownBy
-      new YamlConfigIncluder().includeResources(ctx(allowMissing = false), "no-such.yaml")
+      YamlConfigIncluder.DEFAULT.includeResources(ctx(allowMissing = false), "no-such.yaml")
   }
 
   it should "delegate non-YAML resources to fallback" in {
     val called = new java.util.concurrent.atomic.AtomicBoolean(false)
     val fb = fallbackClasspathIncluder(called)
-    new YamlConfigIncluder().withFallback(fb).asInstanceOf[ConfigIncluderClasspath].includeResources(
+    YamlConfigIncluder.DEFAULT.withFallback(fb).asInstanceOf[ConfigIncluderClasspath].includeResources(
       ctx(), "something.conf")
     called.get() shouldBe true
   }
@@ -176,7 +176,7 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   "includeURL" should "parse a YAML file URL" in {
     val file = writeTemp("key: value")
     try {
-      val result = new YamlConfigIncluder()
+      val result = YamlConfigIncluder.DEFAULT
         .includeURL(ctx(), file.toURI.toURL).toConfig
       result.getString("key") shouldBe "value"
     } finally file.delete(): Unit
@@ -186,7 +186,7 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
     val called = new java.util.concurrent.atomic.AtomicBoolean(false)
     val fb = fallbackURLIncluder(called)
     val url = java.net.URI.create("file:///some/path/config.conf").toURL
-    new YamlConfigIncluder().withFallback(fb).asInstanceOf[ConfigIncluderURL].includeURL(ctx(), url)
+    YamlConfigIncluder.DEFAULT.withFallback(fb).asInstanceOf[ConfigIncluderURL].includeURL(ctx(), url)
     called.get() shouldBe true
   }
 
@@ -195,20 +195,20 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
     val ymlFile = file.resolveSibling(file.getFileName.toString.replace(".yaml", ".yml")).toFile
     Files.copy(file.toFile.toPath, ymlFile.toPath)
     try
-      new YamlConfigIncluder().includeFile(ctx(), ymlFile).toConfig.getInt("v") shouldBe 1
+      YamlConfigIncluder.DEFAULT.includeFile(ctx(), ymlFile).toConfig.getInt("v") shouldBe 1
     finally { ymlFile.delete(): Unit; file.toFile.delete(): Unit }
   }
 
   it should "return empty when non-ConfigIncluderFile fallback is set" in {
     val fb = fallbackIncluder(new java.util.concurrent.atomic.AtomicBoolean())
-    new YamlConfigIncluder().withFallback(fb)
+    YamlConfigIncluder.DEFAULT.withFallback(fb)
       .asInstanceOf[ConfigIncluderFile].includeFile(ctx(), new File("config.conf"))
       .isEmpty shouldBe true
   }
 
   it should "return empty when non-ConfigIncluderClasspath fallback is set" in {
     val fb = fallbackIncluder(new java.util.concurrent.atomic.AtomicBoolean())
-    new YamlConfigIncluder().withFallback(fb)
+    YamlConfigIncluder.DEFAULT.withFallback(fb)
       .asInstanceOf[ConfigIncluderClasspath].includeResources(ctx(), "config.conf")
       .isEmpty shouldBe true
   }
@@ -216,7 +216,7 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   it should "return empty when non-ConfigIncluderURL fallback is set" in {
     val fb = fallbackIncluder(new java.util.concurrent.atomic.AtomicBoolean())
     val url = java.net.URI.create("file:///some/path/config.conf").toURL
-    new YamlConfigIncluder().withFallback(fb)
+    YamlConfigIncluder.DEFAULT.withFallback(fb)
       .asInstanceOf[ConfigIncluderURL].includeURL(ctx(), url)
       .isEmpty shouldBe true
   }
@@ -224,7 +224,7 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   // ── include (generic) ──────────────────────────────────────────────────────
 
   "include" should "load a YAML classpath resource by name" in {
-    val result = new YamlConfigIncluder()
+    val result = YamlConfigIncluder.DEFAULT
       .include(ctx(), "test-resource.yaml").toConfig
     result.getString("resource") shouldBe "ok"
   }
@@ -232,26 +232,26 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
   it should "load a YAML file from the file system" in {
     val file = writeTemp("fs: true")
     try {
-      val result = new YamlConfigIncluder().include(ctx(), file.getAbsolutePath).toConfig
+      val result = YamlConfigIncluder.DEFAULT.include(ctx(), file.getAbsolutePath).toConfig
       result.getBoolean("fs") shouldBe true
     } finally file.delete(): Unit
   }
 
   it should "return empty for missing YAML when allowMissing=true" in {
-    new YamlConfigIncluder()
+    YamlConfigIncluder.DEFAULT
       .include(ctx(allowMissing = true), "/no/such/file.yaml")
       .isEmpty shouldBe true
   }
 
   it should "throw for missing YAML when allowMissing=false" in {
     a[ConfigException.IO] should be thrownBy
-      new YamlConfigIncluder().include(ctx(allowMissing = false), "/no/such/file.yaml")
+      YamlConfigIncluder.DEFAULT.include(ctx(allowMissing = false), "/no/such/file.yaml")
   }
 
   it should "delegate non-YAML names to fallback" in {
     val called = new java.util.concurrent.atomic.AtomicBoolean(false)
     val fb = fallbackIncluder(called)
-    new YamlConfigIncluder().withFallback(fb).include(ctx(), "application.conf")
+    YamlConfigIncluder.DEFAULT.withFallback(fb).include(ctx(), "application.conf")
     called.get() shouldBe true
   }
 
@@ -263,7 +263,7 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
       def setParseOptions(o: ConfigParseOptions): ConfigIncludeContext = this
     }
     // Should not throw — falls back to context classloader
-    new YamlConfigIncluder().include(ctxNullLoader, "test-resource.yaml").toConfig
+    YamlConfigIncluder.DEFAULT.include(ctxNullLoader, "test-resource.yaml").toConfig
       .getString("resource") shouldBe "ok"
   }
 
@@ -271,15 +271,25 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
 
   "withFallback" should "return same instance when fallback is unchanged" in {
     val fb = fallbackIncluder(new java.util.concurrent.atomic.AtomicBoolean())
-    val includer = new YamlConfigIncluder().withFallback(fb)
+    val includer = YamlConfigIncluder.DEFAULT.withFallback(fb)
     includer.withFallback(fb) should be theSameInstanceAs includer
   }
 
   it should "chain fallbacks" in {
     val first = fallbackIncluder(new java.util.concurrent.atomic.AtomicBoolean())
     val second = fallbackIncluder(new java.util.concurrent.atomic.AtomicBoolean())
-    val includer = new YamlConfigIncluder().withFallback(first).withFallback(second)
-    includer should not be theSameInstanceAs(new YamlConfigIncluder())
+    val includer = YamlConfigIncluder.DEFAULT.withFallback(first).withFallback(second)
+    includer should not be theSameInstanceAs(YamlConfigIncluder.DEFAULT)
+  }
+
+  // ── custom factory ────────────────────────────────────────────────────────
+
+  "YamlConfigIncluder(YamlConfigFactory)" should "use the provided factory's depth limit" in {
+    val shallow = new YamlConfigIncluder(new YamlConfigFactory(1))
+    val file = writeTemp("a:\n  b: 1")
+    try {
+      a[ConfigException.Parse] should be thrownBy shallow.includeFile(ctx(), file)
+    } finally { file.delete(): Unit }
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────

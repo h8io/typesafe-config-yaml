@@ -6,6 +6,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * {@link ConfigIncluder} that handles YAML includes (identified by {@code .yaml} / {@code .yml}
@@ -24,23 +25,30 @@ import java.util.Locale;
  * contains {@code include} directives pointing at YAML resources:
  * <pre>{@code
  * ConfigParseOptions opts = ConfigParseOptions.defaults()
- *         .setIncluder(new YamlConfigIncluder());
+ *         .setIncluder(YamlConfigIncluder.DEFAULT);
  * Config cfg = ConfigFactory.parseFile(configFile, opts);
  * }</pre>
  */
 public final class YamlConfigIncluder
         implements ConfigIncluder, ConfigIncluderFile, ConfigIncluderClasspath, ConfigIncluderURL {
 
+    /** Default includer backed by {@link YamlConfigFactory#DEFAULT}. */
+    public static final YamlConfigIncluder DEFAULT = new YamlConfigIncluder(YamlConfigFactory.DEFAULT);
+
+    private final YamlConfigFactory factory;
     private final ConfigIncluder fallback;
 
     /**
-     * Creates a new includer with no fallback.
+     * Creates a new includer backed by the given factory, with no fallback.
+     *
+     * @param factory the factory used to parse YAML sources
      */
-    public YamlConfigIncluder() {
-        this(null);
+    public YamlConfigIncluder(YamlConfigFactory factory) {
+        this(factory, null);
     }
 
-    private YamlConfigIncluder(ConfigIncluder fallback) {
+    private YamlConfigIncluder(YamlConfigFactory factory, ConfigIncluder fallback) {
+        this.factory = Objects.requireNonNull(factory, "factory");
         this.fallback = fallback;
     }
 
@@ -53,8 +61,8 @@ public final class YamlConfigIncluder
     @Override
     public ConfigIncluder withFallback(ConfigIncluder fallback) {
         if (this.fallback == fallback) return this;
-        if (this.fallback == null) return new YamlConfigIncluder(fallback);
-        return new YamlConfigIncluder(this.fallback.withFallback(fallback));
+        if (this.fallback == null) return new YamlConfigIncluder(factory, fallback);
+        return new YamlConfigIncluder(factory, this.fallback.withFallback(fallback));
     }
 
     /**
@@ -147,12 +155,12 @@ public final class YamlConfigIncluder
 
     // ── internal ─────────────────────────────────────────────────────────────
 
-    private static ConfigObject parseAndMerge(File file, ConfigOrigin origin) {
-        return mergeDocuments(YamlConfigFactory.DEFAULT.parseFile(file), origin);
+    private ConfigObject parseAndMerge(File file, ConfigOrigin origin) {
+        return mergeDocuments(factory.parseFile(file), origin);
     }
 
-    private static ConfigObject parseAndMerge(URL url, ConfigOrigin origin) {
-        return mergeDocuments(YamlConfigFactory.DEFAULT.parseURL(url), origin);
+    private ConfigObject parseAndMerge(URL url, ConfigOrigin origin) {
+        return mergeDocuments(factory.parseURL(url), origin);
     }
 
     static ConfigObject mergeDocuments(List<ConfigValue> docs, ConfigOrigin origin) {
