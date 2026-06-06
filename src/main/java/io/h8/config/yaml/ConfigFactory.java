@@ -25,13 +25,12 @@ public final class ConfigFactory {
     private ConfigFactory() {
     }
 
+    private static final ConfigParseOptions DEFAULT_OPTS =
+            ConfigParseOptions.defaults().prependIncluder(YamlConfigIncluder.DEFAULT);
+
     /** Prepends {@link YamlConfigIncluder#DEFAULT} unless one is already present. */
     private static ConfigParseOptions withIncluder(ConfigParseOptions opts) {
         return opts.getIncluder() instanceof YamlConfigIncluder ? opts : opts.prependIncluder(YamlConfigIncluder.DEFAULT);
-    }
-
-    private static ConfigParseOptions defaultOpts() {
-        return withIncluder(ConfigParseOptions.defaults());
     }
 
     // ── load ─────────────────────────────────────────────────────────────────
@@ -43,7 +42,7 @@ public final class ConfigFactory {
      * @return resolved {@link Config}
      */
     public static Config load() {
-        return com.typesafe.config.ConfigFactory.load(defaultOpts());
+        return com.typesafe.config.ConfigFactory.load(DEFAULT_OPTS);
     }
 
     /**
@@ -54,7 +53,7 @@ public final class ConfigFactory {
      * @return resolved {@link Config}
      */
     public static Config load(ClassLoader loader) {
-        return com.typesafe.config.ConfigFactory.load(loader, defaultOpts());
+        return com.typesafe.config.ConfigFactory.load(loader, DEFAULT_OPTS);
     }
 
     /**
@@ -89,7 +88,7 @@ public final class ConfigFactory {
      * @return resolved {@link Config}
      */
     public static Config load(ClassLoader loader, ConfigResolveOptions resolveOptions) {
-        return com.typesafe.config.ConfigFactory.load(loader, defaultOpts(), resolveOptions);
+        return com.typesafe.config.ConfigFactory.load(loader, DEFAULT_OPTS, resolveOptions);
     }
 
     /**
@@ -125,7 +124,7 @@ public final class ConfigFactory {
      * @return resolved {@link Config}
      */
     public static Config load(String resourceBasename) {
-        return com.typesafe.config.ConfigFactory.load(resourceBasename, defaultOpts(), ConfigResolveOptions.defaults());
+        return com.typesafe.config.ConfigFactory.load(resourceBasename, DEFAULT_OPTS, ConfigResolveOptions.defaults());
     }
 
     /**
@@ -137,7 +136,7 @@ public final class ConfigFactory {
      * @return resolved {@link Config}
      */
     public static Config load(ClassLoader loader, String resourceBasename) {
-        return com.typesafe.config.ConfigFactory.load(loader, resourceBasename, defaultOpts(), ConfigResolveOptions.defaults());
+        return com.typesafe.config.ConfigFactory.load(loader, resourceBasename, DEFAULT_OPTS, ConfigResolveOptions.defaults());
     }
 
     /**
@@ -224,7 +223,7 @@ public final class ConfigFactory {
      * @return the application config
      */
     public static Config defaultApplication() {
-        return com.typesafe.config.ConfigFactory.defaultApplication(defaultOpts());
+        return com.typesafe.config.ConfigFactory.defaultApplication(DEFAULT_OPTS);
     }
 
     /**
@@ -236,7 +235,7 @@ public final class ConfigFactory {
      * @return the application config
      */
     public static Config defaultApplication(ClassLoader loader) {
-        return com.typesafe.config.ConfigFactory.defaultApplication(defaultOpts().setClassLoader(loader));
+        return com.typesafe.config.ConfigFactory.defaultApplication(DEFAULT_OPTS.setClassLoader(loader));
     }
 
     /**
@@ -429,7 +428,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseReader(Reader reader) {
-        return com.typesafe.config.ConfigFactory.parseReader(reader, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseReader(reader, DEFAULT_OPTS);
     }
 
     // ── parseURL ──────────────────────────────────────────────────────────────
@@ -454,7 +453,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseURL(URL url) {
-        return com.typesafe.config.ConfigFactory.parseURL(url, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseURL(url, DEFAULT_OPTS);
     }
 
     // ── parseFile ─────────────────────────────────────────────────────────────
@@ -479,7 +478,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseFile(File file) {
-        return com.typesafe.config.ConfigFactory.parseFile(file, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseFile(file, DEFAULT_OPTS);
     }
 
     // ── parseFileAnySyntax ────────────────────────────────────────────────────
@@ -504,7 +503,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseFileAnySyntax(File file) {
-        return com.typesafe.config.ConfigFactory.parseFileAnySyntax(file, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseFileAnySyntax(file, DEFAULT_OPTS);
     }
 
     // ── parseResources ────────────────────────────────────────────────────────
@@ -531,7 +530,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResources(Class<?> klass, String resource) {
-        return com.typesafe.config.ConfigFactory.parseResources(klass, resource, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseResources(klass, resource, DEFAULT_OPTS);
     }
 
     /**
@@ -556,7 +555,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResourcesAnySyntax(Class<?> klass, String resource) {
-        return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(klass, resource, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(klass, resource, DEFAULT_OPTS);
     }
 
     /**
@@ -581,7 +580,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResources(ClassLoader loader, String resource) {
-        return com.typesafe.config.ConfigFactory.parseResources(loader, resource, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseResources(loader, resource, DEFAULT_OPTS);
     }
 
     /**
@@ -606,7 +605,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResourcesAnySyntax(ClassLoader loader, String resource) {
-        return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(loader, resource, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(loader, resource, DEFAULT_OPTS);
     }
 
     /**
@@ -629,7 +628,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResources(String resource) {
-        return com.typesafe.config.ConfigFactory.parseResources(resource, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseResources(resource, DEFAULT_OPTS);
     }
 
     /**
@@ -652,7 +651,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResourcesAnySyntax(String resource) {
-        return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(resource, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(resource, DEFAULT_OPTS);
     }
 
     // ── parseApplicationReplacement ───────────────────────────────────────────
@@ -664,7 +663,7 @@ public final class ConfigFactory {
      * @return optional application replacement config
      */
     public static Optional<Config> parseApplicationReplacement() {
-        return com.typesafe.config.ConfigFactory.parseApplicationReplacement(defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseApplicationReplacement(DEFAULT_OPTS);
     }
 
     /**
@@ -676,7 +675,7 @@ public final class ConfigFactory {
      * @return optional application replacement config
      */
     public static Optional<Config> parseApplicationReplacement(ClassLoader loader) {
-        return com.typesafe.config.ConfigFactory.parseApplicationReplacement(defaultOpts().setClassLoader(loader));
+        return com.typesafe.config.ConfigFactory.parseApplicationReplacement(DEFAULT_OPTS.setClassLoader(loader));
     }
 
     /**
@@ -712,7 +711,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseString(String s) {
-        return com.typesafe.config.ConfigFactory.parseString(s, defaultOpts());
+        return com.typesafe.config.ConfigFactory.parseString(s, DEFAULT_OPTS);
     }
 
     // ── parseMap ──────────────────────────────────────────────────────────────
