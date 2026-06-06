@@ -2,4 +2,4 @@
 
 set -euxo pipefail
 
-sbt scalafmtSbtCheck scalafmtCheckAll clean test jacoco
+sbt scalafmtSbtCheck scalafmtCheckAll clean doc jacoco

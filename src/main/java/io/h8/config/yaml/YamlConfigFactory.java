@@ -30,19 +30,44 @@ import java.util.List;
 public final class YamlConfigFactory {
 
     private static final LoadSettings SETTINGS = LoadSettings.builder().build();
-    static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
+    private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     private YamlConfigFactory() {
     }
 
+    /**
+     * Parses all YAML documents from the given string.
+     *
+     * @param yaml the YAML text to parse
+     * @return one {@link ConfigValue} per document, in stream order; empty if the string
+     *         contains no documents
+     * @throws ConfigException.Parse if the text is not valid YAML
+     */
     public static List<ConfigValue> parseString(String yaml) {
         return parseAll(new StreamReader(SETTINGS, yaml), "<string>");
     }
 
+    /**
+     * Parses all YAML documents from the given file using UTF-8 encoding.
+     *
+     * @param file the file to read
+     * @return one {@link ConfigValue} per document, in stream order
+     * @throws ConfigException.IO    if the file cannot be read
+     * @throws ConfigException.Parse if the content is not valid YAML
+     */
     public static List<ConfigValue> parseFile(File file) {
         return parseFile(file, DEFAULT_CHARSET);
     }
 
+    /**
+     * Parses all YAML documents from the given file.
+     *
+     * @param file    the file to read
+     * @param charset the character encoding to use
+     * @return one {@link ConfigValue} per document, in stream order
+     * @throws ConfigException.IO    if the file cannot be read
+     * @throws ConfigException.Parse if the content is not valid YAML
+     */
     public static List<ConfigValue> parseFile(File file, Charset charset) {
         ConfigOrigin origin = ConfigOriginFactory.newFile(file.getPath());
         try (InputStream in = Files.newInputStream(file.toPath());
@@ -53,6 +78,14 @@ public final class YamlConfigFactory {
         }
     }
 
+    /**
+     * Parses all YAML documents from the given URL using UTF-8 encoding.
+     *
+     * @param url the URL to open
+     * @return one {@link ConfigValue} per document, in stream order
+     * @throws ConfigException.IO    if the URL cannot be opened
+     * @throws ConfigException.Parse if the content is not valid YAML
+     */
     public static List<ConfigValue> parseURL(URL url) {
         ConfigOrigin origin = ConfigOriginFactory.newURL(url);
         try (InputStream in = url.openStream();
@@ -63,14 +96,43 @@ public final class YamlConfigFactory {
         }
     }
 
+    /**
+     * Parses all YAML documents from a classpath resource located via the calling
+     * thread's context class loader.
+     *
+     * @param resource the resource path (e.g. {@code "application.yaml"})
+     * @return one {@link ConfigValue} per document, in stream order
+     * @throws ConfigException.IO    if the resource is not found or cannot be read
+     * @throws ConfigException.Parse if the content is not valid YAML
+     */
     public static List<ConfigValue> parseResources(String resource) {
         return parseURL(requireResource(Thread.currentThread().getContextClassLoader(), resource));
     }
 
+    /**
+     * Parses all YAML documents from a classpath resource located via the given class
+     * loader.
+     *
+     * @param loader   the class loader used to locate the resource
+     * @param resource the resource path (e.g. {@code "application.yaml"})
+     * @return one {@link ConfigValue} per document, in stream order
+     * @throws ConfigException.IO    if the resource is not found or cannot be read
+     * @throws ConfigException.Parse if the content is not valid YAML
+     */
     public static List<ConfigValue> parseResources(ClassLoader loader, String resource) {
         return parseURL(requireResource(loader, resource));
     }
 
+    /**
+     * Parses all YAML documents from a classpath resource located relative to the given
+     * class.
+     *
+     * @param klass    the class used to locate the resource
+     * @param resource the resource path, resolved as by {@link Class#getResource(String)}
+     * @return one {@link ConfigValue} per document, in stream order
+     * @throws ConfigException.IO    if the resource is not found or cannot be read
+     * @throws ConfigException.Parse if the content is not valid YAML
+     */
     public static List<ConfigValue> parseResources(Class<?> klass, String resource) {
         URL url = klass.getResource(resource);
         if (url == null)
