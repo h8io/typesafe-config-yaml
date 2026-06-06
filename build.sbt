@@ -30,7 +30,15 @@ ThisBuild / scalaVersion := "3.3.7"
 ThisBuild / crossPaths := false
 ThisBuild / autoScalaLibrary := false
 
-ThisBuild / javacOptions ++= Seq("--release", "11", "-Xlint:unchecked", "-Xlint:deprecation", "-Werror")
+ThisBuild / javacOptions ++= Seq("--release", "11", "-Xlint:all", "-Werror")
+ThisBuild / scalacOptions ++= Seq(
+  "-deprecation",
+  "-feature",
+  "-unchecked",
+  "-Werror",
+  "-Wunused:all",
+  "-Wvalue-discard"
+)
 
 lazy val root = (project in file("."))
   .settings(

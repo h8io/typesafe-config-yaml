@@ -82,7 +82,7 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
       val cfg = YamlConfigFactory.parseFile(file).get(0).asInstanceOf[ConfigObject].toConfig
       cfg.getLong("a") shouldBe 42L
       cfg.getBoolean("b") shouldBe true
-    } finally file.delete()
+    } finally file.delete(): Unit
   }
 
   it should "respect an explicit Charset" in {
@@ -91,7 +91,7 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
       val cfg = YamlConfigFactory.parseFile(file, StandardCharsets.UTF_8)
         .get(0).asInstanceOf[ConfigObject].toConfig
       cfg.getString("greeting") shouldBe "héllo"
-    } finally file.delete()
+    } finally file.delete(): Unit
   }
 
   it should "throw ConfigException.IO for a missing file" in {
@@ -102,7 +102,7 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
   it should "return an empty list for an empty file" in {
     val file = writeTemp("")
     try YamlConfigFactory.parseFile(file) should have size 0
-    finally file.delete()
+    finally file.delete(): Unit
   }
 
   // ── parseURL ───────────────────────────────────────────────────────────────
@@ -113,14 +113,14 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
       val cfg = YamlConfigFactory.parseURL(file.toURI.toURL)
         .get(0).asInstanceOf[ConfigObject].toConfig
       cfg.getLong("x") shouldBe 99L
-    } finally file.delete()
+    } finally file.delete(): Unit
   }
 
   // ── parseURL error ─────────────────────────────────────────────────────────
 
   "parseURL" should "throw ConfigException.IO for an unreadable URL" in {
     a[ConfigException.IO] should be thrownBy
-      YamlConfigFactory.parseURL(new java.net.URL("file:///nonexistent/no.yaml"))
+      YamlConfigFactory.parseURL(java.net.URI.create("file:///nonexistent/no.yaml").toURL)
   }
 
   // ── parseResources ─────────────────────────────────────────────────────────
