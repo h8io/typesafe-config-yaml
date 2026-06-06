@@ -145,11 +145,11 @@ public final class YamlConfigIncluder
     // ── internal ─────────────────────────────────────────────────────────────
 
     private static ConfigObject parseAndMerge(File file, ConfigOrigin origin) {
-        return mergeDocuments(YamlConfigFactory.parseFile(file), origin);
+        return mergeDocuments(YamlConfigFactory.DEFAULT.parseFile(file), origin);
     }
 
     private static ConfigObject parseAndMerge(URL url, ConfigOrigin origin) {
-        return mergeDocuments(YamlConfigFactory.parseURL(url), origin);
+        return mergeDocuments(YamlConfigFactory.DEFAULT.parseURL(url), origin);
     }
 
     static ConfigObject mergeDocuments(List<ConfigValue> docs, ConfigOrigin origin) {

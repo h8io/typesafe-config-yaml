@@ -17,7 +17,7 @@ import java.util.Map;
  * (according to the YAML 1.2 core schema).
  */
 public final class YamlNodeToConfigValue {
-    static final int DEFAULT_MAX_DEPTH = 256;
+    static final int DEFAULT_MAX_DEPTH = Integer.MAX_VALUE;
     static final YamlNodeToConfigValue DEFAULT = new YamlNodeToConfigValue(DEFAULT_MAX_DEPTH);
 
     private static final ConfigOrigin DEFAULT_ORIGIN = ConfigOriginFactory.newSimple("yaml");
