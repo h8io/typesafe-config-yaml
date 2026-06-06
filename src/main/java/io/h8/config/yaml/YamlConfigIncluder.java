@@ -33,7 +33,9 @@ public final class YamlConfigIncluder
 
     private final ConfigIncluder fallback;
 
-    /** Creates a new includer with no fallback. */
+    /**
+     * Creates a new includer with no fallback.
+     */
     public YamlConfigIncluder() {
         this(null);
     }
@@ -138,8 +140,9 @@ public final class YamlConfigIncluder
      */
     @Override
     public ConfigObject includeURL(ConfigIncludeContext context, URL url) {
-        if (!isYaml(urlPath(url))) return delegateURL(context, url);
-        return parseAndMerge(url, ConfigOriginFactory.newURL(url));
+        return isYaml(urlPath(url))
+                ? parseAndMerge(url, ConfigOriginFactory.newURL(url))
+                : delegateURL(context, url);
     }
 
     // ── internal ─────────────────────────────────────────────────────────────
