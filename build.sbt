@@ -32,7 +32,7 @@ lazy val root = (project in file("."))
     autoScalaLibrary := false,
 
     javacOptions ++= Seq("--release", "11", "-Xlint:all", "-Werror"),
-    Compile / doc / javacOptions -= "-Xlint:all",
+    Compile / doc / javacOptions --= Seq("-Xlint:all", "-Werror"),
     scalacOptions ++= Seq(
       "-deprecation",
       "-feature",
