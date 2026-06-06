@@ -8,7 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-final class YamlNodeToConfigValue {
+public final class YamlNodeToConfigValue {
     static final int DEFAULT_MAX_DEPTH = 256;
     static final YamlNodeToConfigValue DEFAULT = new YamlNodeToConfigValue(DEFAULT_MAX_DEPTH);
 
@@ -23,7 +23,7 @@ final class YamlNodeToConfigValue {
         this.maxDepth = maxDepth;
     }
 
-    ConfigValue convert(Node node) {
+    public ConfigValue convert(Node node) {
         return convert(node, 1);
     }
 
