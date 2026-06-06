@@ -6,6 +6,7 @@ import org.snakeyaml.engine.v2.composer.Composer;
 import org.snakeyaml.engine.v2.exceptions.YamlEngineException;
 import org.snakeyaml.engine.v2.parser.ParserImpl;
 import org.snakeyaml.engine.v2.scanner.StreamReader;
+import org.snakeyaml.engine.v2.schema.CoreSchema;
 
 import java.io.*;
 import java.net.URL;
@@ -29,7 +30,7 @@ import java.util.List;
  */
 public final class YamlConfigFactory {
 
-    private static final LoadSettings SETTINGS = LoadSettings.builder().build();
+    private static final LoadSettings SETTINGS = LoadSettings.builder().setSchema(new CoreSchema()).build();
     private static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
     private YamlConfigFactory() {
@@ -40,7 +41,7 @@ public final class YamlConfigFactory {
      *
      * @param yaml the YAML text to parse
      * @return one {@link ConfigValue} per document, in stream order; empty if the string
-     *         contains no documents
+     * contains no documents
      * @throws ConfigException.Parse if the text is not valid YAML
      */
     public static List<ConfigValue> parseString(String yaml) {

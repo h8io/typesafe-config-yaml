@@ -101,12 +101,20 @@ public final class YamlNodeToConfigValue {
             case "tag:yaml.org,2002:bool":
                 return "true".equalsIgnoreCase(value);
             case "tag:yaml.org,2002:int":
-                return Long.parseLong(value);
+                return parseLong(value);
             case "tag:yaml.org,2002:float":
                 return parseYamlFloat(value);
             default:
                 return value;
         }
+    }
+
+    private static long parseLong(String value) {
+        if (value.startsWith("0x") || value.startsWith("0X"))
+            return Long.parseLong(value.substring(2), 16);
+        if (value.startsWith("0o") || value.startsWith("0O"))
+            return Long.parseLong(value.substring(2), 8);
+        return Long.parseLong(value);
     }
 
     private static double parseYamlFloat(String value) {

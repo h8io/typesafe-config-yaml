@@ -8,10 +8,11 @@ import org.snakeyaml.engine.v2.composer.Composer
 import org.snakeyaml.engine.v2.nodes.Node
 import org.snakeyaml.engine.v2.parser.ParserImpl
 import org.snakeyaml.engine.v2.scanner.StreamReader
+import org.snakeyaml.engine.v2.schema.CoreSchema
 
 class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   private val converter = YamlNodeToConfigValue.DEFAULT
-  private val settings = LoadSettings.builder().build()
+  private val settings = LoadSettings.builder().setSchema(new CoreSchema()).build()
 
   private def compose(text: String): Node = {
     val parser = new ParserImpl(settings, new StreamReader(settings, text))
@@ -47,6 +48,16 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
   it should "parse decimal integers" in {
     scalar("42") shouldBe 42L
     scalar("-1") shouldBe -1L
+  }
+
+  it should "parse hexadecimal integers (YAML 1.2 core)" in {
+    scalar("0xFF") shouldBe 255L
+    scalar("0x1A") shouldBe 26L
+  }
+
+  it should "parse octal integers (YAML 1.2 core)" in {
+    scalar("0o17") shouldBe 15L
+    scalar("0o777") shouldBe 511L
   }
 
   it should "throw on integer overflow" in {
