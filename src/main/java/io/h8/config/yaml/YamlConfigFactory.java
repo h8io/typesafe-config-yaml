@@ -48,8 +48,6 @@ public final class YamlConfigFactory {
         try (InputStream in = Files.newInputStream(file.toPath());
              Reader reader = new InputStreamReader(in, charset)) {
             return parseAll(new StreamReader(SETTINGS, reader), file.getPath());
-        } catch (YamlEngineException e) {
-            throw new ConfigException.Parse(origin, e.getMessage(), e);
         } catch (IOException e) {
             throw new ConfigException.IO(origin, e.getMessage(), e);
         }
@@ -60,8 +58,6 @@ public final class YamlConfigFactory {
         try (InputStream in = url.openStream();
              Reader reader = new InputStreamReader(in, DEFAULT_CHARSET)) {
             return parseAll(new StreamReader(SETTINGS, reader), url.toString());
-        } catch (YamlEngineException e) {
-            throw new ConfigException.Parse(origin, e.getMessage(), e);
         } catch (IOException e) {
             throw new ConfigException.IO(origin, e.getMessage(), e);
         }

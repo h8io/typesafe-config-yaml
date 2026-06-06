@@ -116,6 +116,13 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
     } finally file.delete()
   }
 
+  // ── parseURL error ─────────────────────────────────────────────────────────
+
+  "parseURL" should "throw ConfigException.IO for an unreadable URL" in {
+    a[ConfigException.IO] should be thrownBy
+      YamlConfigFactory.parseURL(new java.net.URL("file:///nonexistent/no.yaml"))
+  }
+
   // ── parseResources ─────────────────────────────────────────────────────────
 
   "parseResources(Class, String)" should "load a classpath resource" in {
@@ -126,6 +133,21 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
   it should "throw ConfigException.IO when resource is absent" in {
     a[ConfigException.IO] should be thrownBy
       YamlConfigFactory.parseResources(getClass, "/no-such-file.yaml")
+  }
+
+  "parseResources(ClassLoader, String)" should "load a classpath resource" in {
+    val docs = YamlConfigFactory.parseResources(getClass.getClassLoader, "test-resource.yaml")
+    docs.get(0).asInstanceOf[ConfigObject].toConfig.getString("resource") shouldBe "ok"
+  }
+
+  it should "throw ConfigException.IO when resource is absent" in {
+    a[ConfigException.IO] should be thrownBy
+      YamlConfigFactory.parseResources(getClass.getClassLoader, "no-such-file.yaml")
+  }
+
+  "parseResources(String)" should "load a classpath resource via context classloader" in {
+    val docs = YamlConfigFactory.parseResources("test-resource.yaml")
+    docs.get(0).asInstanceOf[ConfigObject].toConfig.getString("resource") shouldBe "ok"
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────

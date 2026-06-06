@@ -103,6 +103,12 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
       shallow.convert(compose("a:\n  b: 1"))
   }
 
+  it should "throw IllegalArgumentException for non-positive maxDepth" in {
+    an[IllegalArgumentException] should be thrownBy new YamlNodeToConfigValue(0)
+    an[IllegalArgumentException] should be thrownBy new YamlNodeToConfigValue(-1)
+  }
+
+
   // --- duplicate keys ---
 
   it should "use last value for duplicate scalar keys" in {
