@@ -1,6 +1,6 @@
 package io.h8.config.yaml
 
-import com.typesafe.config._
+import com.typesafe.config.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.snakeyaml.engine.v2.api.LoadSettings
@@ -107,7 +107,6 @@ class YamlNodeToConfigValueSpec extends AnyFlatSpec with Matchers {
     an[IllegalArgumentException] should be thrownBy new YamlNodeToConfigValue(0)
     an[IllegalArgumentException] should be thrownBy new YamlNodeToConfigValue(-1)
   }
-
 
   // --- duplicate keys ---
 
