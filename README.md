@@ -1,3 +1,5 @@
+[![GitHub release](https://img.shields.io/github/v/release/h8io/typesafe-config-yaml)](https://github.com/h8io/typesafe-config-yaml/releases/latest)
+
 # typesafe-config-yaml
 
 A [typesafe-config](https://github.com/lightbend/config) extension that parses YAML sources into `ConfigValue` objects and lets HOCON files include
