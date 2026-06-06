@@ -46,7 +46,7 @@ public final class YamlConfigFactory {
     public static final YamlConfigFactory DEFAULT = new YamlConfigFactory(DEFAULT_SETTINGS);
 
     private final LoadSettings settings;
-    private final YamlNodeToConfigValue converter;
+    private final YamlNodeConverter converter;
 
     /**
      * Creates a factory with custom {@link LoadSettings} and no depth limit.
@@ -55,7 +55,7 @@ public final class YamlConfigFactory {
      */
     public YamlConfigFactory(LoadSettings settings) {
         this.settings = Objects.requireNonNull(settings, "settings");
-        this.converter = YamlNodeToConfigValue.DEFAULT;
+        this.converter = YamlNodeConverter.DEFAULT;
     }
 
     /**
@@ -66,7 +66,7 @@ public final class YamlConfigFactory {
      */
     public YamlConfigFactory(int maxDepth) {
         this.settings = DEFAULT_SETTINGS;
-        this.converter = new YamlNodeToConfigValue(maxDepth);
+        this.converter = new YamlNodeConverter(maxDepth);
     }
 
     /**
@@ -78,7 +78,7 @@ public final class YamlConfigFactory {
      */
     public YamlConfigFactory(LoadSettings settings, int maxDepth) {
         this.settings = Objects.requireNonNull(settings, "settings");
-        this.converter = new YamlNodeToConfigValue(maxDepth);
+        this.converter = new YamlNodeConverter(maxDepth);
     }
 
     /**
@@ -190,7 +190,7 @@ public final class YamlConfigFactory {
             Composer composer = new Composer(settings, new ParserImpl(settings, stream));
             List<ConfigValue> result = new ArrayList<>();
             while (composer.hasNext()) {
-                result.add(converter.convert(composer.next()));
+                result.add(converter.apply(composer.next()));
             }
             return Collections.unmodifiableList(result);
         } catch (YamlEngineException e) {
