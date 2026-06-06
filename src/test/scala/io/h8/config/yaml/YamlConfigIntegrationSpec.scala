@@ -4,6 +4,8 @@ import com.typesafe.config.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import java.nio.charset.StandardCharsets
+
 class YamlConfigIntegrationSpec extends AnyFlatSpec with Matchers {
 
   // prependIncluder wires YamlConfigIncluder as the first in chain, with the
@@ -115,9 +117,9 @@ class YamlConfigIntegrationSpec extends AnyFlatSpec with Matchers {
     val dir = java.nio.file.Files.createTempDirectory("yaml-rel-test")
     val yaml = dir.resolve("rel.yaml").toFile
     val conf = dir.resolve("main.conf").toFile
-    java.nio.file.Files.write(yaml.toPath, "rel-key: from-relative-yaml\n".getBytes)
+    java.nio.file.Files.write(yaml.toPath, "rel-key: from-relative-yaml\n".getBytes(StandardCharsets.UTF_8))
     java.nio.file.Files.write(conf.toPath,
-      "include \"rel.yaml\"\nconf-key = from-conf\n".getBytes)
+      "include \"rel.yaml\"\nconf-key = from-conf\n".getBytes(StandardCharsets.UTF_8))
     try {
       val cfg = ConfigFactory.parseFile(conf, opts)
       cfg.getString("rel-key") shouldBe "from-relative-yaml"

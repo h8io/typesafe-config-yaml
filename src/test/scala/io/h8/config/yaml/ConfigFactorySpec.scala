@@ -5,6 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.io.StringReader
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.Properties
 
@@ -57,15 +58,15 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     val dir = Files.createTempDirectory("cf-file-test")
     val yaml = dir.resolve("rel.yaml").toFile
     val conf = dir.resolve("main.conf").toFile
-    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes)
-    Files.write(conf.toPath, "include \"rel.yaml\"\nconf-key = from-conf\n".getBytes)
+    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes(StandardCharsets.UTF_8))
+    Files.write(conf.toPath, "include \"rel.yaml\"\nconf-key = from-conf\n".getBytes(StandardCharsets.UTF_8))
     try {
       val cfg = ConfigFactory.parseFile(conf)
       cfg.getString("yaml-key") shouldBe "from-yaml"
       cfg.getString("conf-key") shouldBe "from-conf"
     } finally {
-      yaml.delete(): Unit
-      conf.delete(): Unit
+      yaml.delete()
+      conf.delete()
       dir.toFile.delete(): Unit
     }
   }
@@ -74,14 +75,14 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     val dir = Files.createTempDirectory("cf-file-opts-test")
     val yaml = dir.resolve("rel.yaml").toFile
     val conf = dir.resolve("main.conf").toFile
-    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes)
-    Files.write(conf.toPath, "include \"rel.yaml\"\n".getBytes)
+    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes(StandardCharsets.UTF_8))
+    Files.write(conf.toPath, "include \"rel.yaml\"\n".getBytes(StandardCharsets.UTF_8))
     try {
       val cfg = ConfigFactory.parseFile(conf, ConfigParseOptions.defaults())
       cfg.getString("yaml-key") shouldBe "from-yaml"
     } finally {
-      yaml.delete(): Unit
-      conf.delete(): Unit
+      yaml.delete()
+      conf.delete()
       dir.toFile.delete(): Unit
     }
   }
@@ -92,14 +93,14 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     val dir = Files.createTempDirectory("cf-url-test")
     val yaml = dir.resolve("rel.yaml").toFile
     val conf = dir.resolve("main.conf").toFile
-    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes)
-    Files.write(conf.toPath, "include \"rel.yaml\"\n".getBytes)
+    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes(StandardCharsets.UTF_8))
+    Files.write(conf.toPath, "include \"rel.yaml\"\n".getBytes(StandardCharsets.UTF_8))
     try {
       val cfg = ConfigFactory.parseURL(conf.toURI.toURL)
       cfg.getString("yaml-key") shouldBe "from-yaml"
     } finally {
-      yaml.delete(): Unit
-      conf.delete(): Unit
+      yaml.delete()
+      conf.delete()
       dir.toFile.delete(): Unit
     }
   }
