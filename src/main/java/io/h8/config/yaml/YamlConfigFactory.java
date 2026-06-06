@@ -40,7 +40,9 @@ public final class YamlConfigFactory {
             .build();
     static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    /** Default factory: YAML 1.2 core schema, no depth limit. */
+    /**
+     * Default factory: YAML 1.2 core schema, no depth limit.
+     */
     public static final YamlConfigFactory DEFAULT = new YamlConfigFactory(DEFAULT_SETTINGS);
 
     private final LoadSettings settings;
@@ -84,7 +86,7 @@ public final class YamlConfigFactory {
      *
      * @param yaml the YAML text to parse
      * @return one {@link ConfigValue} per document, in stream order; empty if the string
-     *         contains no documents
+     * contains no documents
      * @throws ConfigException.Parse if the text is not valid YAML
      */
     public List<ConfigValue> parseString(String yaml) {
@@ -114,8 +116,7 @@ public final class YamlConfigFactory {
      */
     public List<ConfigValue> parseFile(File file, Charset charset) {
         ConfigOrigin origin = ConfigOriginFactory.newFile(file.getPath());
-        try (InputStream in = Files.newInputStream(file.toPath());
-             Reader reader = new InputStreamReader(in, charset)) {
+        try (InputStream in = Files.newInputStream(file.toPath()); Reader reader = new InputStreamReader(in, charset)) {
             return parseAll(new StreamReader(settings, reader), file.getPath());
         } catch (IOException e) {
             throw new ConfigException.IO(origin, e.getMessage(), e);
@@ -182,8 +183,6 @@ public final class YamlConfigFactory {
                     "resource not found on classpath: " + resource);
         return parseURL(url);
     }
-
-    // ── internal ─────────────────────────────────────────────────────────────
 
     private List<ConfigValue> parseAll(StreamReader stream, String originDesc) {
         ConfigOrigin origin = ConfigOriginFactory.newSimple(originDesc);

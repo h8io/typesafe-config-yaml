@@ -164,9 +164,7 @@ public final class YamlConfigIncluder
                 ? parseAndMerge(url, ConfigOriginFactory.newURL(url))
                 : delegateURL(context, url);
     }
-
-    // ── internal ─────────────────────────────────────────────────────────────
-
+    
     private ConfigObject parseAndMerge(File file, ConfigOrigin origin) {
         return mergeDocuments(factory.parseFile(file), origin);
     }
