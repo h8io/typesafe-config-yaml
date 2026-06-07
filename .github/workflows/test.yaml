@@ -14,5 +14,6 @@ jobs:
     secrets: inherit
     uses: h8io/gha/.github/workflows/test.yaml@v3
     with:
+      java-version: 21
       timeout-minutes: 5
       publish-scoverage-summary: false
