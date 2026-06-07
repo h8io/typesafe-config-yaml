@@ -3,8 +3,6 @@ import sbt.*
 
 val ProjectName = "typesafe-config-yaml"
 
-ThisBuild / javafmtStyle := JavaFormatterOptions.Style.AOSP
-
 lazy val root = (project in file("."))
   .settings(
     organization := "io.h8",
@@ -52,5 +50,7 @@ lazy val root = (project in file("."))
       "org.scalatest" %% "scalatest" % "3.2.20" % Test
     ),
 
+    javafmtStyle := JavaFormatterOptions.Style.AOSP,
+    
     dependencyOverrides += "org.scala-lang" %% "scala3-library" % scalaVersion.value
   )
