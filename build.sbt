@@ -8,6 +8,7 @@ lazy val root = (project in file("."))
   .settings(
     organization := "io.h8",
     name := ProjectName,
+    description := "typesafe-config extension that adds YAML support via snakeyaml-engine",
 
     organizationName := "H8IO",
     organizationHomepage := Some(url(s"https://github.com/h8io")),
