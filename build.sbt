@@ -1,6 +1,9 @@
+import com.google.googlejavaformat.java.JavaFormatterOptions
 import sbt.*
 
 val ProjectName = "typesafe-config-yaml"
+
+ThisBuild / javafmtStyle := JavaFormatterOptions.Style.AOSP
 
 lazy val root = (project in file("."))
   .settings(

@@ -3,6 +3,8 @@ package io.h8.config.yaml
 import com.typesafe.config.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.snakeyaml.engine.v2.api.LoadSettings
+import org.snakeyaml.engine.v2.schema.CoreSchema
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -153,24 +155,18 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
   // ── parameterized factory ──────────────────────────────────────────────────
 
   "YamlConfigFactory(maxDepth)" should "throw on exceeded depth" in {
-    a[ConfigException.Parse] should be thrownBy
-      new YamlConfigFactory(1).parseString("a:\n  b: 1")
+    a[ConfigException.Parse] should be thrownBy new YamlConfigFactory(1).parseString("a:\n  b: 1")
   }
 
   "YamlConfigFactory(LoadSettings)" should "use custom settings" in {
-    import org.snakeyaml.engine.v2.api.LoadSettings
-    import org.snakeyaml.engine.v2.schema.CoreSchema
     val settings = LoadSettings.builder().setSchema(new CoreSchema()).build()
     val docs = new YamlConfigFactory(settings).parseString("x: 1")
     docs.get(0).asInstanceOf[ConfigObject].toConfig.getInt("x") shouldBe 1
   }
 
   "YamlConfigFactory(LoadSettings, maxDepth)" should "respect both parameters" in {
-    import org.snakeyaml.engine.v2.api.LoadSettings
-    import org.snakeyaml.engine.v2.schema.CoreSchema
     val settings = LoadSettings.builder().setSchema(new CoreSchema()).build()
-    a[ConfigException.Parse] should be thrownBy
-      new YamlConfigFactory(settings, 1).parseString("a:\n  b: 1")
+    a[ConfigException.Parse] should be thrownBy new YamlConfigFactory(settings, 1).parseString("a:\n  b: 1")
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────
