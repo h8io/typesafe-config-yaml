@@ -1,3 +1,4 @@
+import com.github.sbt.jacoco.report.{JacocoReportSettings, JacocoThresholds}
 import com.google.googlejavaformat.java.JavaFormatterOptions
 import sbt.*
 
@@ -48,6 +49,10 @@ lazy val root = (project in file("."))
       "com.typesafe" % "config" % "1.4.9",
       "org.snakeyaml" % "snakeyaml-engine" % "3.0.1",
       "org.scalatest" %% "scalatest" % "3.2.20" % Test
+    ),
+
+    jacocoReportSettings := JacocoReportSettings().withThresholds(
+      JacocoThresholds(instruction = 90, method = 90, branch = 90, complexity = 90, line = 90, clazz = 90)
     ),
 
     javafmtStyle := JavaFormatterOptions.Style.AOSP,

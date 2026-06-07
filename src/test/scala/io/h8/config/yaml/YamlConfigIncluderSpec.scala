@@ -255,6 +255,11 @@ class YamlConfigIncluderSpec extends AnyFlatSpec with Matchers {
     called.get() shouldBe true
   }
 
+  it should "return empty for non-YAML names when no fallback is set" in {
+    val includer = new YamlConfigIncluder(YamlConfigFactory.DEFAULT)
+    includer.include(ctx(), "application.conf").isEmpty shouldBe true
+  }
+
   it should "use context classloader when parseOptions returns null loader" in {
     val ctxNullLoader = new ConfigIncludeContext {
       def relativeTo(f: String): ConfigParseable = null
