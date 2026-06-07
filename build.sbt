@@ -51,6 +51,6 @@ lazy val root = (project in file("."))
     ),
 
     javafmtStyle := JavaFormatterOptions.Style.AOSP,
-    
+
     dependencyOverrides += "org.scala-lang" %% "scala3-library" % scalaVersion.value
   )

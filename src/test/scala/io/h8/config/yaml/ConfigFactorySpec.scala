@@ -160,4 +160,125 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     val cfg = ConfigFactory.parseProperties(props)
     cfg.getString("a.b") shouldBe "value"
   }
+
+  // ── load ───────────────────────────────────────────────────────────────────
+
+  "ConfigFactory.load()" should "load application.conf with YAML includes" in {
+    val cfg = ConfigFactory.load()
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("app-key") shouldBe "from-application"
+  }
+
+  "ConfigFactory.load(ClassLoader)" should "load application.conf using a given ClassLoader" in {
+    val cfg = ConfigFactory.load(getClass.getClassLoader)
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("app-key") shouldBe "from-application"
+  }
+
+  "ConfigFactory.load(ConfigParseOptions)" should "load application.conf with custom parse options" in {
+    val cfg = ConfigFactory.load(ConfigParseOptions.defaults().setAllowMissing(false))
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("app-key") shouldBe "from-application"
+  }
+
+  it should "be idempotent when YamlConfigIncluder is already present" in {
+    val opts = ConfigParseOptions.defaults().prependIncluder(YamlConfigIncluder.DEFAULT)
+    val cfg = ConfigFactory.load(opts)
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+  }
+
+  "ConfigFactory.load(ClassLoader, ConfigParseOptions)" should
+    "load application.conf with ClassLoader and parse options" in {
+      val cfg = ConfigFactory.load(getClass.getClassLoader, ConfigParseOptions.defaults())
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("app-key") shouldBe "from-application"
+    }
+
+  "ConfigFactory.load(ClassLoader, ConfigResolveOptions)" should
+    "load application.conf with ClassLoader and resolve options" in {
+      val cfg = ConfigFactory.load(getClass.getClassLoader, com.typesafe.config.ConfigResolveOptions.defaults())
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("app-key") shouldBe "from-application"
+    }
+
+  "ConfigFactory.load(ConfigParseOptions, ConfigResolveOptions)" should
+    "load application.conf with parse and resolve options" in {
+      val cfg = ConfigFactory.load(ConfigParseOptions.defaults(), com.typesafe.config.ConfigResolveOptions.defaults())
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("app-key") shouldBe "from-application"
+    }
+
+  "ConfigFactory.load(ClassLoader, ConfigParseOptions, ConfigResolveOptions)" should
+    "load application.conf with all options" in {
+      val cfg = ConfigFactory.load(
+        getClass.getClassLoader,
+        ConfigParseOptions.defaults(),
+        com.typesafe.config.ConfigResolveOptions.defaults()
+      )
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("app-key") shouldBe "from-application"
+    }
+
+  "ConfigFactory.load(String)" should "load a named resource basename" in {
+    val cfg = ConfigFactory.load("cf-main")
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  "ConfigFactory.load(ClassLoader, String)" should "load a named resource basename with ClassLoader" in {
+    val cfg = ConfigFactory.load(getClass.getClassLoader, "cf-main")
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  "ConfigFactory.load(String, ConfigParseOptions, ConfigResolveOptions)" should "load a named resource with options" in {
+    val cfg = ConfigFactory.load(
+      "cf-main",
+      ConfigParseOptions.defaults(),
+      com.typesafe.config.ConfigResolveOptions.defaults()
+    )
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  "ConfigFactory.load(ClassLoader, String, ConfigParseOptions, ConfigResolveOptions)" should
+    "load a named resource with all options" in {
+      val cfg = ConfigFactory.load(
+        getClass.getClassLoader,
+        "cf-main",
+        ConfigParseOptions.defaults(),
+        com.typesafe.config.ConfigResolveOptions.defaults()
+      )
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("conf-key") shouldBe "from-cf-main"
+    }
+
+  "ConfigFactory.load(Config)" should "resolve an already-parsed config" in {
+    val parsed = ConfigFactory.parseString("load-key = load-value")
+    val cfg = ConfigFactory.load(parsed)
+    cfg.getString("load-key") shouldBe "load-value"
+  }
+
+  "ConfigFactory.load(ClassLoader, Config)" should "resolve an already-parsed config with a ClassLoader" in {
+    val parsed = ConfigFactory.parseString("load-key = load-value")
+    val cfg = ConfigFactory.load(getClass.getClassLoader, parsed)
+    cfg.getString("load-key") shouldBe "load-value"
+  }
+
+  "ConfigFactory.load(Config, ConfigResolveOptions)" should "resolve an already-parsed config with resolve options" in {
+    val parsed = ConfigFactory.parseString("load-key = load-value")
+    val cfg = ConfigFactory.load(parsed, com.typesafe.config.ConfigResolveOptions.defaults())
+    cfg.getString("load-key") shouldBe "load-value"
+  }
+
+  "ConfigFactory.load(ClassLoader, Config, ConfigResolveOptions)" should
+    "resolve an already-parsed config with all options" in {
+      val parsed = ConfigFactory.parseString("load-key = load-value")
+      val cfg = ConfigFactory.load(
+        getClass.getClassLoader,
+        parsed,
+        com.typesafe.config.ConfigResolveOptions.defaults()
+      )
+      cfg.getString("load-key") shouldBe "load-value"
+    }
 }
