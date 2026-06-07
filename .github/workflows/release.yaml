@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  snapshot:
+  release:
     secrets: inherit
     uses: h8io/gha/.github/workflows/release.yaml@v3
     with:
