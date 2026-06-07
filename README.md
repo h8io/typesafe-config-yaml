@@ -166,6 +166,60 @@ ConfigParseOptions opts = ConfigParseOptions.defaults()
         .prependIncluder(new YamlConfigIncluder(factory));
 ```
 
+## Drop-in replacement — `io.h8.config.yaml.ConfigFactory`
+
+For projects that call `ConfigFactory` throughout the codebase, wiring `YamlConfigIncluder` into every
+`ConfigParseOptions` by hand is impractical. The library ships `io.h8.config.yaml.ConfigFactory` — a static façade
+with the same API as `com.typesafe.config.ConfigFactory` that automatically prepends `YamlConfigIncluder.DEFAULT` to
+every `load` and `parse` call.
+
+### Migration
+
+Replace the import — nothing else changes:
+
+```java
+// before
+import com.typesafe.config.ConfigFactory;
+
+// after
+import io.h8.config.yaml.ConfigFactory;
+```
+
+All existing call sites continue to work, and YAML includes start resolving immediately:
+
+```java
+// loads application.conf; YAML includes inside it resolve automatically
+Config cfg = ConfigFactory.load();
+
+// explicit resource basename — finds application.yaml / application.conf / …
+Config cfg = ConfigFactory.load("application");
+
+// parse helpers — all accept the same overloads as the original
+Config cfg = ConfigFactory.parseFile(new File("app.conf"));
+Config cfg = ConfigFactory.parseResources("app.conf");
+Config cfg = ConfigFactory.parseString("include \"extra.yaml\"\nkey = value");
+```
+
+### Custom `ConfigParseOptions`
+
+When you pass a `ConfigParseOptions` that already has a `YamlConfigIncluder` at the front of its includer chain, the
+façade detects this and does **not** prepend a second one — so calling it with manually-wired options is safe and
+idempotent:
+
+```java
+ConfigParseOptions opts = ConfigParseOptions.defaults()
+        .prependIncluder(new YamlConfigIncluder(customFactory));
+
+Config cfg = ConfigFactory.load(opts);   // customFactory is used, no double-wrapping
+```
+
+### Scope
+
+`io.h8.config.yaml.ConfigFactory` covers every overload of `load`, `parse*`, `defaultApplication`,
+`defaultReference`, `defaultOverrides`, `empty`, `invalidateCaches`, `systemProperties`, and `systemEnvironment`. The
+only methods that do **not** inject an includer are the `load(Config, …)` family — those accept an already-parsed
+config and only perform substitution resolution.
+
 ## YAML 1.2 Core Schema type mapping
 
 | YAML tag  | Java type                                    |
