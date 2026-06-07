@@ -13,6 +13,6 @@ jobs:
     secrets: inherit
     uses: h8io/gha/.github/workflows/release.yaml@v3
     with:
-      java-version: 17
+      java-version: 21
       debug: true
       verbose: true
