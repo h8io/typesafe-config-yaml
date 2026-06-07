@@ -105,11 +105,33 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     }
   }
 
+  it should "accept explicit ConfigParseOptions" in {
+    val dir = Files.createTempDirectory("cf-url-opts-test")
+    val yaml = dir.resolve("rel.yaml").toFile
+    val conf = dir.resolve("main.conf").toFile
+    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes(StandardCharsets.UTF_8))
+    Files.write(conf.toPath, "include \"rel.yaml\"\n".getBytes(StandardCharsets.UTF_8))
+    try {
+      val cfg = ConfigFactory.parseURL(conf.toURI.toURL, ConfigParseOptions.defaults())
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+    } finally {
+      yaml.delete()
+      conf.delete()
+      dir.toFile.delete(): Unit
+    }
+  }
+
   // ── parseReader ────────────────────────────────────────────────────────────
 
   "ConfigFactory.parseReader" should "resolve YAML includes from a reader" in {
     val reader = new StringReader("""include "int-a.yaml"""")
     val cfg = ConfigFactory.parseReader(reader)
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+  }
+
+  it should "accept explicit ConfigParseOptions" in {
+    val reader = new StringReader("""include "int-a.yaml"""")
+    val cfg = ConfigFactory.parseReader(reader, ConfigParseOptions.defaults())
     cfg.getString("yaml-key") shouldBe "from-yaml"
   }
 
@@ -152,6 +174,115 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     cfg.getString("y") shouldBe "hello"
   }
 
+  // ── parseFileAnySyntax ─────────────────────────────────────────────────────
+
+  "ConfigFactory.parseFileAnySyntax" should "resolve YAML includes from a .conf file inferred by extension" in {
+    val dir = Files.createTempDirectory("cf-anysyntax-test")
+    val yaml = dir.resolve("rel.yaml").toFile
+    val conf = dir.resolve("main.conf").toFile
+    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes(StandardCharsets.UTF_8))
+    Files.write(conf.toPath, "include \"rel.yaml\"\nconf-key = from-conf\n".getBytes(StandardCharsets.UTF_8))
+    try {
+      val cfg = ConfigFactory.parseFileAnySyntax(dir.resolve("main").toFile)
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("conf-key") shouldBe "from-conf"
+    } finally {
+      yaml.delete()
+      conf.delete()
+      dir.toFile.delete(): Unit
+    }
+  }
+
+  it should "accept explicit ConfigParseOptions" in {
+    val dir = Files.createTempDirectory("cf-anysyntax-opts-test")
+    val yaml = dir.resolve("rel.yaml").toFile
+    val conf = dir.resolve("main.conf").toFile
+    Files.write(yaml.toPath, "yaml-key: from-yaml\n".getBytes(StandardCharsets.UTF_8))
+    Files.write(conf.toPath, "include \"rel.yaml\"\n".getBytes(StandardCharsets.UTF_8))
+    try {
+      val cfg = ConfigFactory.parseFileAnySyntax(dir.resolve("main").toFile, ConfigParseOptions.defaults())
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+    } finally {
+      yaml.delete()
+      conf.delete()
+      dir.toFile.delete(): Unit
+    }
+  }
+
+  // ── parseResources (with options) ──────────────────────────────────────────
+
+  "ConfigFactory.parseResources(String, ConfigParseOptions)" should "resolve YAML includes from a classpath resource" in {
+    val cfg = ConfigFactory.parseResources("cf-main.conf", ConfigParseOptions.defaults())
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  "ConfigFactory.parseResources(Class, String, ConfigParseOptions)" should
+    "resolve YAML includes from a classpath resource" in {
+      val cfg = ConfigFactory.parseResources(getClass, "/cf-main.conf", ConfigParseOptions.defaults())
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("conf-key") shouldBe "from-cf-main"
+    }
+
+  "ConfigFactory.parseResources(ClassLoader, String, ConfigParseOptions)" should
+    "resolve YAML includes from a classpath resource" in {
+      val cfg = ConfigFactory.parseResources(getClass.getClassLoader, "cf-main.conf", ConfigParseOptions.defaults())
+      cfg.getString("yaml-key") shouldBe "from-yaml"
+      cfg.getString("conf-key") shouldBe "from-cf-main"
+    }
+
+  // ── parseResourcesAnySyntax ────────────────────────────────────────────────
+
+  "ConfigFactory.parseResourcesAnySyntax(String)" should "find a classpath resource by basename" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax("cf-main")
+    cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  "ConfigFactory.parseResourcesAnySyntax(String, ConfigParseOptions)" should
+    "find a classpath resource by basename with options" in {
+      val cfg = ConfigFactory.parseResourcesAnySyntax("cf-main", ConfigParseOptions.defaults())
+      cfg.getString("conf-key") shouldBe "from-cf-main"
+    }
+
+  "ConfigFactory.parseResourcesAnySyntax(Class, String)" should "find a classpath resource by basename" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax(getClass, "/cf-main")
+    cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  "ConfigFactory.parseResourcesAnySyntax(Class, String, ConfigParseOptions)" should
+    "find a classpath resource by basename with options" in {
+      val cfg = ConfigFactory.parseResourcesAnySyntax(getClass, "/cf-main", ConfigParseOptions.defaults())
+      cfg.getString("conf-key") shouldBe "from-cf-main"
+    }
+
+  "ConfigFactory.parseResourcesAnySyntax(ClassLoader, String)" should "find a classpath resource by basename" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax(getClass.getClassLoader, "cf-main")
+    cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  "ConfigFactory.parseResourcesAnySyntax(ClassLoader, String, ConfigParseOptions)" should
+    "find a classpath resource by basename with options" in {
+      val cfg = ConfigFactory.parseResourcesAnySyntax(getClass.getClassLoader, "cf-main", ConfigParseOptions.defaults())
+      cfg.getString("conf-key") shouldBe "from-cf-main"
+    }
+
+  // ── parseApplicationReplacement ────────────────────────────────────────────
+
+  "ConfigFactory.parseApplicationReplacement()" should "return an Optional (empty when no override is configured)" in {
+    val result = ConfigFactory.parseApplicationReplacement()
+    result should not be null
+  }
+
+  "ConfigFactory.parseApplicationReplacement(ClassLoader)" should "return an Optional with the given ClassLoader" in {
+    val result = ConfigFactory.parseApplicationReplacement(getClass.getClassLoader)
+    result should not be null
+  }
+
+  "ConfigFactory.parseApplicationReplacement(ConfigParseOptions)" should "return an Optional with given options" in {
+    val result = ConfigFactory.parseApplicationReplacement(ConfigParseOptions.defaults())
+    result should not be null
+  }
+
   // ── parseProperties ────────────────────────────────────────────────────────
 
   "ConfigFactory.parseProperties" should "convert properties to config" in {
@@ -159,6 +290,90 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     props.setProperty("a.b", "value")
     val cfg = ConfigFactory.parseProperties(props)
     cfg.getString("a.b") shouldBe "value"
+  }
+
+  it should "accept explicit ConfigParseOptions" in {
+    val props = new Properties()
+    props.setProperty("a.b", "value")
+    val cfg = ConfigFactory.parseProperties(props, ConfigParseOptions.defaults())
+    cfg.getString("a.b") shouldBe "value"
+  }
+
+  // ── parseMap (with origin) ─────────────────────────────────────────────────
+
+  "ConfigFactory.parseMap(Map, String)" should "convert a map to config with origin description" in {
+    val cfg = ConfigFactory.parseMap(java.util.Map.of("z", "hello"), "test-origin")
+    cfg.getString("z") shouldBe "hello"
+    cfg.origin().description() should include("test-origin")
+  }
+
+  // ── defaultApplication ─────────────────────────────────────────────────────
+
+  "ConfigFactory.defaultApplication()" should "parse application.conf with YAML includes" in {
+    val cfg = ConfigFactory.defaultApplication()
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("app-key") shouldBe "from-application"
+  }
+
+  "ConfigFactory.defaultApplication(ClassLoader)" should "parse application.conf with a given ClassLoader" in {
+    val cfg = ConfigFactory.defaultApplication(getClass.getClassLoader)
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("app-key") shouldBe "from-application"
+  }
+
+  "ConfigFactory.defaultApplication(ConfigParseOptions)" should "parse application.conf with custom options" in {
+    val cfg = ConfigFactory.defaultApplication(ConfigParseOptions.defaults())
+    cfg.getString("yaml-key") shouldBe "from-yaml"
+    cfg.getString("app-key") shouldBe "from-application"
+  }
+
+  // ── defaultReference / defaultReferenceUnresolved ──────────────────────────
+
+  "ConfigFactory.defaultReference()" should "return a non-null Config" in {
+    ConfigFactory.defaultReference() should not be null
+  }
+
+  "ConfigFactory.defaultReference(ClassLoader)" should "return a non-null Config" in {
+    ConfigFactory.defaultReference(getClass.getClassLoader) should not be null
+  }
+
+  "ConfigFactory.defaultReferenceUnresolved()" should "return a non-null Config" in {
+    ConfigFactory.defaultReferenceUnresolved() should not be null
+  }
+
+  "ConfigFactory.defaultReferenceUnresolved(ClassLoader)" should "return a non-null Config" in {
+    ConfigFactory.defaultReferenceUnresolved(getClass.getClassLoader) should not be null
+  }
+
+  // ── defaultOverrides ───────────────────────────────────────────────────────
+
+  "ConfigFactory.defaultOverrides()" should "return a non-null Config" in {
+    ConfigFactory.defaultOverrides() should not be null
+  }
+
+  "ConfigFactory.defaultOverrides(ClassLoader)" should "return a non-null Config" in {
+    ConfigFactory.defaultOverrides(getClass.getClassLoader) should not be null
+  }
+
+  // ── invalidateCaches ───────────────────────────────────────────────────────
+
+  "ConfigFactory.invalidateCaches()" should "complete without error" in {
+    noException should be thrownBy ConfigFactory.invalidateCaches()
+  }
+
+  // ── system / env ───────────────────────────────────────────────────────────
+
+  "ConfigFactory.systemProperties()" should "return a Config containing java.home" in {
+    val cfg = ConfigFactory.systemProperties()
+    cfg.hasPath("java.home") shouldBe true
+  }
+
+  "ConfigFactory.systemEnvironment()" should "return a non-null Config" in {
+    ConfigFactory.systemEnvironment() should not be null
+  }
+
+  "ConfigFactory.systemEnvironmentOverrides()" should "return a non-null Config" in {
+    ConfigFactory.systemEnvironmentOverrides() should not be null
   }
 
   // ── load ───────────────────────────────────────────────────────────────────
