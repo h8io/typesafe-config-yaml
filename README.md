@@ -191,7 +191,8 @@ All existing call sites continue to work, and YAML includes start resolving imme
 // loads application.conf; YAML includes inside it resolve automatically
 Config cfg = ConfigFactory.load();
 
-// explicit resource basename — finds application.yaml / application.conf / …
+// explicit resource basename — finds application.conf / application.json / application.properties
+// (typesafe-config does not probe .yaml; use YamlConfigFactory to load a YAML file directly)
 Config cfg = ConfigFactory.load("application");
 
 // parse helpers — all accept the same overloads as the original
@@ -199,6 +200,15 @@ Config cfg = ConfigFactory.parseFile(new File("app.conf"));
 Config cfg = ConfigFactory.parseResources("app.conf");
 Config cfg = ConfigFactory.parseString("include \"extra.yaml\"\nkey = value");
 ```
+
+> **Loading a YAML file as the top-level config.** `ConfigFactory` (and typesafe-config itself) only
+> recognises `.conf`, `.json`, and `.properties` as top-level syntax. `YamlConfigIncluder` is invoked
+> only for `include` directives found *inside* a file already being parsed. To load a YAML file
+> directly, use `YamlConfigFactory`:
+>
+> ```java
+> Config cfg = ((ConfigObject) YamlConfigFactory.DEFAULT.parseFile(new File("app.yaml")).get(0)).toConfig();
+> ```
 
 ### Custom `ConfigParseOptions`
 
