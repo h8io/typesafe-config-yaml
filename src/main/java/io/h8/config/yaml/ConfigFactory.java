@@ -487,7 +487,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseURL(URL url, ConfigParseOptions options) {
-        if (Util.isYaml(Util.urlPath(url)))
+        if (Util.isYaml(url))
             return parseYamlDocs(
                     YamlConfigIncluder.factoryFor(options).parseURL(url),
                     ConfigOriginFactory.newURL(url));
@@ -503,7 +503,7 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseURL(URL url) {
-        if (Util.isYaml(Util.urlPath(url)))
+        if (Util.isYaml(url))
             return parseYamlDocs(
                     YamlConfigFactory.DEFAULT.parseURL(url), ConfigOriginFactory.newURL(url));
         return com.typesafe.config.ConfigFactory.parseURL(url, DEFAULT_OPTS);

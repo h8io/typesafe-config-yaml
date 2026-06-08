@@ -12,7 +12,11 @@ final class Util {
         return lower.endsWith(".yaml") || lower.endsWith(".yml");
     }
 
-    static String urlPath(URL url) {
+    static boolean isYaml(URL url) {
+        return isYaml(urlPath(url));
+    }
+
+    private static String urlPath(URL url) {
         String path = url.getPath();
         int q = path.indexOf('?');
         return q >= 0 ? path.substring(0, q) : path;

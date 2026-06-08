@@ -162,7 +162,7 @@ public final class YamlConfigIncluder
      */
     @Override
     public ConfigObject includeURL(ConfigIncludeContext context, URL url) {
-        return Util.isYaml(Util.urlPath(url))
+        return Util.isYaml(url)
                 ? parseAndMerge(url, ConfigOriginFactory.newURL(url))
                 : delegateURL(context, url);
     }
