@@ -185,30 +185,26 @@ import com.typesafe.config.ConfigFactory;
 import io.h8.config.yaml.ConfigFactory;
 ```
 
-All existing call sites continue to work, and YAML includes start resolving immediately:
+All existing call sites continue to work. YAML includes resolve automatically, and `parse*` methods
+now also accept YAML files directly by extension:
 
 ```java
 // loads application.conf; YAML includes inside it resolve automatically
 Config cfg = ConfigFactory.load();
 
 // explicit resource basename — finds application.conf / application.json / application.properties
-// (typesafe-config does not probe .yaml; use YamlConfigFactory to load a YAML file directly)
+// note: typesafe-config does not probe .yaml for load(); use parseResources() for that
 Config cfg = ConfigFactory.load("application");
 
-// parse helpers — all accept the same overloads as the original
+// parse a YAML file directly — detected by .yaml / .yml extension
+Config cfg = ConfigFactory.parseFile(new File("app.yaml"));
+Config cfg = ConfigFactory.parseResources("config.yaml");
+Config cfg = ConfigFactory.parseURL(url);                    // works if URL path ends in .yaml
+
+// parse a HOCON file that includes YAML
 Config cfg = ConfigFactory.parseFile(new File("app.conf"));
-Config cfg = ConfigFactory.parseResources("app.conf");
 Config cfg = ConfigFactory.parseString("include \"extra.yaml\"\nkey = value");
 ```
-
-> **Loading a YAML file as the top-level config.** `ConfigFactory` (and typesafe-config itself) only
-> recognises `.conf`, `.json`, and `.properties` as top-level syntax. `YamlConfigIncluder` is invoked
-> only for `include` directives found *inside* a file already being parsed. To load a YAML file
-> directly, use `YamlConfigFactory`:
->
-> ```java
-> Config cfg = ((ConfigObject) YamlConfigFactory.DEFAULT.parseFile(new File("app.yaml")).get(0)).toConfig();
-> ```
 
 ### Custom `ConfigParseOptions`
 
@@ -229,6 +225,45 @@ Config cfg = ConfigFactory.load(opts);   // customFactory is used, no double-wra
 `defaultReference`, `defaultOverrides`, `empty`, `invalidateCaches`, `systemProperties`, and `systemEnvironment`. The
 only methods that do **not** inject an includer are the `load(Config, …)` family — those accept an already-parsed
 config and only perform substitution resolution.
+
+## Configurable instance — `ConfigLoader`
+
+`ConfigLoader` is an instance-based alternative to the static `ConfigFactory` facade. All settings
+are fixed at construction time via a builder, so call sites need no parameters beyond the resource
+itself.
+
+```java
+ConfigLoader loader = ConfigLoader.builder()
+        .yamlMaxDepth(64)                                                    // or .yamlFactory(...)
+        .parseOptions(ConfigParseOptions.defaults().setAllowMissing(false))
+        .resolveOptions(ConfigResolveOptions.noSystem())
+        .classLoader(myLoader)
+        .build();
+
+// load
+Config cfg = loader.load();                          // application.conf + reference + system props
+Config cfg = loader.load("application");             // by basename (.conf / .json / .properties)
+
+// parse — .yaml / .yml detected by extension, everything else treated as HOCON/JSON
+Config cfg = loader.parseFile(new File("app.yaml"));
+Config cfg = loader.parseResources("config.yaml");
+Config cfg = loader.parseResources(MyApp.class, "/config.yaml");
+Config cfg = loader.parseURL(url);
+Config cfg = loader.parseString("include \"extra.yaml\"\nkey = value");
+```
+
+Use `ConfigLoader.DEFAULT` when no custom settings are needed — it is equivalent to
+`ConfigFactory.load()` with all defaults.
+
+### Builder options
+
+| Method | Default | Description |
+|---|---|---|
+| `yamlFactory(YamlConfigFactory)` | `YamlConfigFactory.DEFAULT` | Custom YAML parser (settings, schema) |
+| `yamlMaxDepth(int)` | — | Shortcut: creates a factory with the given depth limit |
+| `parseOptions(ConfigParseOptions)` | `ConfigParseOptions.defaults()` | Base HOCON parse options; `YamlConfigIncluder` is prepended automatically |
+| `resolveOptions(ConfigResolveOptions)` | `ConfigResolveOptions.defaults()` | Substitution resolution options |
+| `classLoader(ClassLoader)` | context class loader | Class loader for classpath resource lookup |
 
 ## YAML 1.2 Core Schema type mapping
 
