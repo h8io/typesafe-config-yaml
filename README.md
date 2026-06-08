@@ -2,17 +2,114 @@
 
 # typesafe-config-yaml
 
-A [typesafe-config](https://github.com/lightbend/config) extension that parses YAML sources into `ConfigValue` objects and lets HOCON files include
-YAML via `include` directives.
+Typesafe Config is the de facto configuration standard in many Scala/JVM projects, but it does not parse YAML.
+This library adds YAML 1.2 support without replacing the existing HOCON workflow.
 
-Built on **snakeyaml-engine 3** with the **YAML 1.2 Core Schema**.
+## Quick start
 
-## Dependency
+**1. Add the dependency** (built on snakeyaml-engine 3, YAML 1.2 Core Schema):
 
 ```scala
-// build.sbt
-libraryDependencies += "io.h8" % "typesafe-config-yaml" % "<version>"
+// build.sbt — replace with the latest version if needed
+libraryDependencies += "io.h8" % "typesafe-config-yaml" % "1.1.0"
 ```
+
+**2. Replace the import** — nothing else changes:
+
+```java
+// before
+import com.typesafe.config.ConfigFactory;
+
+// after
+import io.h8.config.yaml.ConfigFactory;
+```
+
+That's it. `ConfigFactory.load()` now probes `application.yaml` first, YAML files parse by extension,
+and `include "file.yaml"` works inside HOCON files.
+
+## Drop-in replacement — `io.h8.config.yaml.ConfigFactory`
+
+`io.h8.config.yaml.ConfigFactory` is a static façade with the same API as `com.typesafe.config.ConfigFactory` that:
+
+- probes `.yaml` / `.yml` resources **before** `.conf` / `.json` / `.properties` in `load()` and `load(String)`,
+- detects `.yaml` / `.yml` by extension in `parse*(File/URL/resource)` and parses them directly,
+- prepends `YamlConfigIncluder.DEFAULT` everywhere else so HOCON `include` directives resolve YAML files.
+
+```java
+// probes application.yaml first, then application.conf; YAML includes resolve automatically
+Config cfg = ConfigFactory.load();
+
+// explicit resource basename — probes .yaml / .yml first, then .conf / .json / .properties
+Config cfg = ConfigFactory.load("application");
+
+// parse a YAML file directly — detected by .yaml / .yml extension
+Config cfg = ConfigFactory.parseFile(new File("app.yaml"));
+Config cfg = ConfigFactory.parseResources("config.yaml");
+Config cfg = ConfigFactory.parseURL(url);                    // works if URL path ends in .yaml
+
+// parse a HOCON file that includes YAML
+Config cfg = ConfigFactory.parseFile(new File("app.conf"));
+Config cfg = ConfigFactory.parseString("include \"extra.yaml\"\nkey = value");
+```
+
+### Custom `ConfigParseOptions`
+
+When you pass a `ConfigParseOptions` that already has a `YamlConfigIncluder` at the front of its includer chain, the
+façade detects this and does **not** prepend a second one — so calling it with manually-wired options is safe and
+idempotent:
+
+```java
+ConfigParseOptions opts = ConfigParseOptions.defaults()
+        .prependIncluder(new YamlConfigIncluder(customFactory));
+
+Config cfg = ConfigFactory.load(opts);   // customFactory is used, no double-wrapping
+```
+
+### Scope
+
+`io.h8.config.yaml.ConfigFactory` covers every overload of `load`, `parse*`, `defaultApplication`,
+`defaultReference`, `defaultOverrides`, `empty`, `invalidateCaches`, `systemProperties`, and `systemEnvironment`. The
+only methods that do **not** inject an includer are the `load(Config, …)` family — those accept an already-parsed
+config and only perform substitution resolution.
+
+## Configurable instance — `ConfigLoader`
+
+`ConfigLoader` is an instance-based alternative to the static `ConfigFactory` facade. All settings
+are fixed at construction time via a builder, so call sites need no parameters beyond the resource
+itself.
+
+```java
+ConfigLoader loader = ConfigLoader.builder()
+        .yamlMaxDepth(64)                                                    // or .yamlFactory(...)
+        .parseOptions(ConfigParseOptions.defaults().setAllowMissing(false))
+        .resolveOptions(ConfigResolveOptions.noSystem())
+        .classLoader(myLoader)
+        .build();
+
+// load — .yaml / .yml probed first, then .conf / .json / .properties
+Config cfg = loader.load();                          // application.yaml → application.conf → reference + system props
+Config cfg = loader.load("application");             // basename.yaml → basename.conf / .json / .properties
+
+// parse — .yaml / .yml detected by extension, everything else treated as HOCON/JSON
+Config cfg = loader.parseFile(new File("app.yaml"));
+Config cfg = loader.parseResources("config.yaml");
+Config cfg = loader.parseResources(MyApp.class, "/config.yaml");
+Config cfg = loader.parseURL(url);
+Config cfg = loader.parseString("include \"extra.yaml\"\nkey = value");
+```
+
+Use `ConfigLoader.DEFAULT` when no custom settings are needed — it is equivalent to
+`ConfigFactory.load()` with all defaults.
+
+### Builder options
+
+| Method | Default | Description |
+|---|---|---|
+| `yamlFactory(YamlConfigFactory)` | `YamlConfigFactory.DEFAULT` | Custom YAML parser (settings, schema) |
+| `yamlMaxDepth(int)` | — | Shortcut: creates a factory with the given depth limit |
+| `parseOptions(ConfigParseOptions)` | `ConfigParseOptions.defaults()` | Base HOCON parse options; `YamlConfigIncluder` is prepended automatically |
+| `resolveOptions(ConfigResolveOptions)` | `ConfigResolveOptions.defaults()` | Substitution resolution options |
+| `classLoader(ClassLoader)` | context class loader | Class loader for classpath resource lookup |
 
 ## Parsing YAML directly — `YamlConfigFactory`
 
@@ -165,108 +262,6 @@ YamlConfigFactory factory = new YamlConfigFactory(settings, 32);
 ConfigParseOptions opts = ConfigParseOptions.defaults()
         .prependIncluder(new YamlConfigIncluder(factory));
 ```
-
-## Drop-in replacement — `io.h8.config.yaml.ConfigFactory`
-
-For projects that call `ConfigFactory` throughout the codebase, wiring `YamlConfigIncluder` into every
-`ConfigParseOptions` by hand is impractical. The library ships `io.h8.config.yaml.ConfigFactory` — a static façade
-with the same API as `com.typesafe.config.ConfigFactory` that:
-
-- probes `.yaml` / `.yml` resources **before** `.conf` / `.json` / `.properties` in `load()` and `load(String)`,
-- detects `.yaml` / `.yml` by extension in `parse*(File/URL/resource)` and parses them directly,
-- prepends `YamlConfigIncluder.DEFAULT` everywhere else so HOCON `include` directives resolve YAML files.
-
-### Migration
-
-Replace the import — nothing else changes:
-
-```java
-// before
-import com.typesafe.config.ConfigFactory;
-
-// after
-import io.h8.config.yaml.ConfigFactory;
-```
-
-All existing call sites continue to work. YAML includes resolve automatically, and `parse*` methods
-now also accept YAML files directly by extension:
-
-```java
-// probes application.yaml first, then application.conf; YAML includes resolve automatically
-Config cfg = ConfigFactory.load();
-
-// explicit resource basename — probes .yaml / .yml first, then .conf / .json / .properties
-Config cfg = ConfigFactory.load("application");
-
-// parse a YAML file directly — detected by .yaml / .yml extension
-Config cfg = ConfigFactory.parseFile(new File("app.yaml"));
-Config cfg = ConfigFactory.parseResources("config.yaml");
-Config cfg = ConfigFactory.parseURL(url);                    // works if URL path ends in .yaml
-
-// parse a HOCON file that includes YAML
-Config cfg = ConfigFactory.parseFile(new File("app.conf"));
-Config cfg = ConfigFactory.parseString("include \"extra.yaml\"\nkey = value");
-```
-
-### Custom `ConfigParseOptions`
-
-When you pass a `ConfigParseOptions` that already has a `YamlConfigIncluder` at the front of its includer chain, the
-façade detects this and does **not** prepend a second one — so calling it with manually-wired options is safe and
-idempotent:
-
-```java
-ConfigParseOptions opts = ConfigParseOptions.defaults()
-        .prependIncluder(new YamlConfigIncluder(customFactory));
-
-Config cfg = ConfigFactory.load(opts);   // customFactory is used, no double-wrapping
-```
-
-### Scope
-
-`io.h8.config.yaml.ConfigFactory` covers every overload of `load`, `parse*`, `defaultApplication`,
-`defaultReference`, `defaultOverrides`, `empty`, `invalidateCaches`, `systemProperties`, and `systemEnvironment`. The
-only methods that do **not** inject an includer are the `load(Config, …)` family — those accept an already-parsed
-config and only perform substitution resolution.
-
-
-## Configurable instance — `ConfigLoader`
-
-`ConfigLoader` is an instance-based alternative to the static `ConfigFactory` facade. All settings
-are fixed at construction time via a builder, so call sites need no parameters beyond the resource
-itself.
-
-```java
-ConfigLoader loader = ConfigLoader.builder()
-        .yamlMaxDepth(64)                                                    // or .yamlFactory(...)
-        .parseOptions(ConfigParseOptions.defaults().setAllowMissing(false))
-        .resolveOptions(ConfigResolveOptions.noSystem())
-        .classLoader(myLoader)
-        .build();
-
-// load — .yaml / .yml probed first, then .conf / .json / .properties
-Config cfg = loader.load();                          // application.yaml → application.conf → reference + system props
-Config cfg = loader.load("application");             // basename.yaml → basename.conf / .json / .properties
-
-// parse — .yaml / .yml detected by extension, everything else treated as HOCON/JSON
-Config cfg = loader.parseFile(new File("app.yaml"));
-Config cfg = loader.parseResources("config.yaml");
-Config cfg = loader.parseResources(MyApp.class, "/config.yaml");
-Config cfg = loader.parseURL(url);
-Config cfg = loader.parseString("include \"extra.yaml\"\nkey = value");
-```
-
-Use `ConfigLoader.DEFAULT` when no custom settings are needed — it is equivalent to
-`ConfigFactory.load()` with all defaults.
-
-### Builder options
-
-| Method | Default | Description |
-|---|---|---|
-| `yamlFactory(YamlConfigFactory)` | `YamlConfigFactory.DEFAULT` | Custom YAML parser (settings, schema) |
-| `yamlMaxDepth(int)` | — | Shortcut: creates a factory with the given depth limit |
-| `parseOptions(ConfigParseOptions)` | `ConfigParseOptions.defaults()` | Base HOCON parse options; `YamlConfigIncluder` is prepended automatically |
-| `resolveOptions(ConfigResolveOptions)` | `ConfigResolveOptions.defaults()` | Substitution resolution options |
-| `classLoader(ClassLoader)` | context class loader | Class loader for classpath resource lookup |
 
 ## YAML 1.2 Core Schema type mapping
 
