@@ -15,7 +15,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.stream.Collectors;
@@ -53,9 +52,11 @@ public final class YamlConfigFactory {
      * Creates a factory with custom {@link LoadSettings} and no depth limit.
      *
      * @param settings snakeyaml-engine load settings
+     * @throws IllegalArgumentException if {@code settings} enables recursive keys
      */
     public YamlConfigFactory(LoadSettings settings) {
-        this.settings = Objects.requireNonNull(settings, "settings");
+        validateSettings(settings);
+        this.settings = settings;
         this.converter = YamlNodeConverter.DEFAULT;
     }
 
@@ -75,10 +76,12 @@ public final class YamlConfigFactory {
      *
      * @param settings snakeyaml-engine load settings
      * @param maxDepth maximum allowed YAML nesting depth (must be &gt; 0)
-     * @throws IllegalArgumentException if {@code maxDepth} is not positive
+     * @throws IllegalArgumentException if {@code settings} enables recursive keys, or if {@code
+     *     maxDepth} is not positive
      */
     public YamlConfigFactory(LoadSettings settings, int maxDepth) {
-        this.settings = Objects.requireNonNull(settings, "settings");
+        validateSettings(settings);
+        this.settings = settings;
         this.converter = new YamlNodeConverter(maxDepth);
     }
 
@@ -185,6 +188,11 @@ public final class YamlConfigFactory {
                     ConfigOriginFactory.newSimple(resource),
                     "resource not found on classpath: " + resource);
         return parseURL(url);
+    }
+
+    private static void validateSettings(LoadSettings settings) {
+        if (settings.getAllowRecursiveKeys())
+            throw new IllegalArgumentException("LoadSettings must not enable allowRecursiveKeys");
     }
 
     private List<ConfigValue> parseAll(StreamReader stream, String originDesc) {
