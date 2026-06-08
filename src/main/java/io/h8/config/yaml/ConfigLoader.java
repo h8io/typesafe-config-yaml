@@ -60,25 +60,28 @@ public final class ConfigLoader {
     // ── load ─────────────────────────────────────────────────────────────────
 
     /**
-     * Loads the standard application config ({@code application.conf} / system properties /
-     * reference configs), with YAML includes resolved.
+     * Equivalent to {@link #load(String) load("application")}.
      *
      * @return resolved {@link Config}
      */
     public Config load() {
-        return com.typesafe.config.ConfigFactory.load(parseOptions, resolveOptions);
+        return load("application");
     }
 
     /**
-     * Loads a named resource basename (e.g. {@code "application"}), with YAML includes resolved.
-     * typesafe-config probes {@code .conf}, {@code .json}, and {@code .properties} — not {@code
-     * .yaml}. Use {@link #parseResources(String)} to load a YAML file directly.
+     * Loads a named resource basename. {@code {basename}.yaml} and {@code {basename}.yml} are
+     * probed first and take priority over {@code .conf} / {@code .json} / {@code .properties}.
+     * System properties and reference configs are layered as usual.
      *
      * @param basename resource basename without extension
      * @return resolved {@link Config}
      */
     public Config load(String basename) {
-        return com.typesafe.config.ConfigFactory.load(basename, parseOptions, resolveOptions);
+        Config standard =
+                com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(basename, parseOptions);
+        Config yaml = probeYaml(basename);
+        Config merged = yaml != null ? yaml.withFallback(standard) : standard;
+        return com.typesafe.config.ConfigFactory.load(effectiveLoader(), merged, resolveOptions);
     }
 
     // ── parse ─────────────────────────────────────────────────────────────────
@@ -158,6 +161,17 @@ public final class ConfigLoader {
      */
     public Config parseString(String s) {
         return com.typesafe.config.ConfigFactory.parseString(s, parseOptions);
+    }
+
+    private Config probeYaml(String basename) {
+        for (String ext : new String[] {".yaml", ".yml"}) {
+            URL url = effectiveLoader().getResource(basename + ext);
+            if (url != null)
+                return YamlConfigIncluder.mergeDocuments(
+                                yamlFactory.parseURL(url), ConfigOriginFactory.newURL(url))
+                        .toConfig();
+        }
+        return null;
     }
 
     private ClassLoader effectiveLoader() {

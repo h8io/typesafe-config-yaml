@@ -192,8 +192,7 @@ now also accept YAML files directly by extension:
 // loads application.conf; YAML includes inside it resolve automatically
 Config cfg = ConfigFactory.load();
 
-// explicit resource basename — finds application.conf / application.json / application.properties
-// note: typesafe-config does not probe .yaml for load(); use parseResources() for that
+// explicit resource basename — probes .yaml / .yml first, then .conf / .json / .properties
 Config cfg = ConfigFactory.load("application");
 
 // parse a YAML file directly — detected by .yaml / .yml extension
@@ -240,9 +239,9 @@ ConfigLoader loader = ConfigLoader.builder()
         .classLoader(myLoader)
         .build();
 
-// load
-Config cfg = loader.load();                          // application.conf + reference + system props
-Config cfg = loader.load("application");             // by basename (.conf / .json / .properties)
+// load — .yaml / .yml probed first, then .conf / .json / .properties
+Config cfg = loader.load();                          // application.yaml → application.conf → reference + system props
+Config cfg = loader.load("application");             // basename.yaml → basename.conf / .json / .properties
 
 // parse — .yaml / .yml detected by extension, everything else treated as HOCON/JSON
 Config cfg = loader.parseFile(new File("app.yaml"));

@@ -52,65 +52,74 @@ public final class ConfigFactory {
     // ── load ─────────────────────────────────────────────────────────────────
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ConfigParseOptions)} with {@link
-     * YamlConfigIncluder#DEFAULT} prepended.
+     * Loads the standard application config. Equivalent to {@link ConfigLoader#load()}: {@code
+     * application.yaml} / {@code application.yml} are probed first; if absent, falls back to {@code
+     * application.conf} / {@code .json} / {@code .properties}. System properties and reference
+     * configs are layered as usual.
      *
      * @return resolved {@link Config}
      */
     public static Config load() {
-        return com.typesafe.config.ConfigFactory.load(DEFAULT_OPTS);
+        return ConfigLoader.DEFAULT.load();
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ClassLoader, ConfigParseOptions)}
-     * with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
+     * falls back to {@code .conf} / {@code .json} / {@code .properties}. System properties and
+     * reference configs are layered as usual.
      *
      * @param loader class loader used to find resources
      * @return resolved {@link Config}
      */
     public static Config load(ClassLoader loader) {
-        return com.typesafe.config.ConfigFactory.load(loader, DEFAULT_OPTS);
+        return ConfigLoader.builder().classLoader(loader).build().load();
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ConfigParseOptions)} with {@link
-     * YamlConfigIncluder#DEFAULT} prepended to {@code parseOptions}.
+     * Probes {@code application.yaml} / {@code application.yml} first, then falls back to {@code
+     * .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to
+     * {@code parseOptions} automatically.
      *
      * @param parseOptions parse options
      * @return resolved {@link Config}
      */
     public static Config load(ConfigParseOptions parseOptions) {
-        return com.typesafe.config.ConfigFactory.load(withIncluder(parseOptions));
+        return ConfigLoader.builder().parseOptions(parseOptions).build().load();
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ClassLoader, ConfigParseOptions)}
-     * with {@link YamlConfigIncluder#DEFAULT} prepended to {@code parseOptions}.
+     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
+     * falls back to {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder}
+     * is prepended to {@code parseOptions} automatically.
      *
      * @param loader class loader used to find resources
      * @param parseOptions parse options
      * @return resolved {@link Config}
      */
     public static Config load(ClassLoader loader, ConfigParseOptions parseOptions) {
-        return com.typesafe.config.ConfigFactory.load(loader, withIncluder(parseOptions));
+        return ConfigLoader.builder().classLoader(loader).parseOptions(parseOptions).build().load();
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ClassLoader, ConfigParseOptions,
-     * ConfigResolveOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
+     * falls back to {@code .conf} / {@code .json} / {@code .properties}.
      *
      * @param loader class loader used to find resources
      * @param resolveOptions substitution resolution options
      * @return resolved {@link Config}
      */
     public static Config load(ClassLoader loader, ConfigResolveOptions resolveOptions) {
-        return com.typesafe.config.ConfigFactory.load(loader, DEFAULT_OPTS, resolveOptions);
+        return ConfigLoader.builder()
+                .classLoader(loader)
+                .resolveOptions(resolveOptions)
+                .build()
+                .load();
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ConfigParseOptions,
-     * ConfigResolveOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended to {@code
-     * parseOptions}.
+     * Probes {@code application.yaml} / {@code application.yml} first, then falls back to {@code
+     * .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to
+     * {@code parseOptions} automatically.
      *
      * @param parseOptions parse options
      * @param resolveOptions substitution resolution options
@@ -118,13 +127,17 @@ public final class ConfigFactory {
      */
     public static Config load(
             ConfigParseOptions parseOptions, ConfigResolveOptions resolveOptions) {
-        return com.typesafe.config.ConfigFactory.load(withIncluder(parseOptions), resolveOptions);
+        return ConfigLoader.builder()
+                .parseOptions(parseOptions)
+                .resolveOptions(resolveOptions)
+                .build()
+                .load();
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ClassLoader, ConfigParseOptions,
-     * ConfigResolveOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended to {@code
-     * parseOptions}.
+     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
+     * falls back to {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder}
+     * is prepended to {@code parseOptions} automatically.
      *
      * @param loader class loader used to find resources
      * @param parseOptions parse options
@@ -135,39 +148,42 @@ public final class ConfigFactory {
             ClassLoader loader,
             ConfigParseOptions parseOptions,
             ConfigResolveOptions resolveOptions) {
-        return com.typesafe.config.ConfigFactory.load(
-                loader, withIncluder(parseOptions), resolveOptions);
+        return ConfigLoader.builder()
+                .classLoader(loader)
+                .parseOptions(parseOptions)
+                .resolveOptions(resolveOptions)
+                .build()
+                .load();
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(String, ConfigParseOptions,
-     * ConfigResolveOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Loads a named resource basename. Equivalent to {@link ConfigLoader#load(String)}: {@code
+     * {basename}.yaml} / {@code {basename}.yml} are probed first, then {@code .conf} / {@code
+     * .json} / {@code .properties}. System properties and reference configs are layered as usual.
      *
      * @param resourceBasename resource basename (e.g. {@code application})
      * @return resolved {@link Config}
      */
     public static Config load(String resourceBasename) {
-        return com.typesafe.config.ConfigFactory.load(
-                resourceBasename, DEFAULT_OPTS, ConfigResolveOptions.defaults());
+        return ConfigLoader.DEFAULT.load(resourceBasename);
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ClassLoader, String,
-     * ConfigParseOptions, ConfigResolveOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Probes {@code {basename}.yaml} / {@code {basename}.yml} first using {@code loader}, then
+     * falls back to {@code .conf} / {@code .json} / {@code .properties}.
      *
      * @param loader class loader used to find resources
      * @param resourceBasename resource basename (e.g. {@code application})
      * @return resolved {@link Config}
      */
     public static Config load(ClassLoader loader, String resourceBasename) {
-        return com.typesafe.config.ConfigFactory.load(
-                loader, resourceBasename, DEFAULT_OPTS, ConfigResolveOptions.defaults());
+        return ConfigLoader.builder().classLoader(loader).build().load(resourceBasename);
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(String, ConfigParseOptions,
-     * ConfigResolveOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended to {@code
-     * parseOptions}.
+     * Probes {@code {basename}.yaml} / {@code {basename}.yml} first, then falls back to {@code
+     * .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to
+     * {@code parseOptions} automatically.
      *
      * @param resourceBasename resource basename (e.g. {@code application})
      * @param parseOptions parse options
@@ -178,14 +194,17 @@ public final class ConfigFactory {
             String resourceBasename,
             ConfigParseOptions parseOptions,
             ConfigResolveOptions resolveOptions) {
-        return com.typesafe.config.ConfigFactory.load(
-                resourceBasename, withIncluder(parseOptions), resolveOptions);
+        return ConfigLoader.builder()
+                .parseOptions(parseOptions)
+                .resolveOptions(resolveOptions)
+                .build()
+                .load(resourceBasename);
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#load(ClassLoader, String,
-     * ConfigParseOptions, ConfigResolveOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended
-     * to {@code parseOptions}.
+     * Probes {@code {basename}.yaml} / {@code {basename}.yml} first using {@code loader}, then
+     * falls back to {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder}
+     * is prepended to {@code parseOptions} automatically.
      *
      * @param loader class loader used to find resources
      * @param resourceBasename resource basename (e.g. {@code application})
@@ -198,8 +217,12 @@ public final class ConfigFactory {
             String resourceBasename,
             ConfigParseOptions parseOptions,
             ConfigResolveOptions resolveOptions) {
-        return com.typesafe.config.ConfigFactory.load(
-                loader, resourceBasename, withIncluder(parseOptions), resolveOptions);
+        return ConfigLoader.builder()
+                .classLoader(loader)
+                .parseOptions(parseOptions)
+                .resolveOptions(resolveOptions)
+                .build()
+                .load(resourceBasename);
     }
 
     /**
@@ -495,18 +518,15 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseURL(URL, ConfigParseOptions)}
-     * with {@link YamlConfigIncluder#DEFAULT} prepended. If the URL path has a {@code .yaml} or
-     * {@code .yml} extension it is parsed directly with {@link YamlConfigFactory}.
+     * Equivalent to {@link ConfigLoader#parseURL(URL)}: URLs whose path ends with {@code .yaml} or
+     * {@code .yml} are parsed as YAML; everything else as HOCON/JSON with {@link
+     * YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param url URL to parse
      * @return parsed {@link Config}
      */
     public static Config parseURL(URL url) {
-        if (Util.isYaml(url))
-            return parseYamlDocs(
-                    YamlConfigFactory.DEFAULT.parseURL(url), ConfigOriginFactory.newURL(url));
-        return com.typesafe.config.ConfigFactory.parseURL(url, DEFAULT_OPTS);
+        return ConfigLoader.DEFAULT.parseURL(url);
     }
 
     // ── parseFile ─────────────────────────────────────────────────────────────
@@ -528,19 +548,15 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseFile(File, ConfigParseOptions)}
-     * with {@link YamlConfigIncluder#DEFAULT} prepended. If the file has a {@code .yaml} or {@code
-     * .yml} extension it is parsed directly with {@link YamlConfigFactory}.
+     * Equivalent to {@link ConfigLoader#parseFile(File)}: files with a {@code .yaml} or {@code
+     * .yml} extension are parsed as YAML; everything else as HOCON/JSON with {@link
+     * YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param file file to parse
      * @return parsed {@link Config}
      */
     public static Config parseFile(File file) {
-        if (Util.isYaml(file.getName()))
-            return parseYamlDocs(
-                    YamlConfigFactory.DEFAULT.parseFile(file),
-                    ConfigOriginFactory.newFile(file.getPath()));
-        return com.typesafe.config.ConfigFactory.parseFile(file, DEFAULT_OPTS);
+        return ConfigLoader.DEFAULT.parseFile(file);
     }
 
     // ── parseFileAnySyntax ────────────────────────────────────────────────────
@@ -590,21 +606,16 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResources(Class, String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended. If the resource name
-     * has a {@code .yaml} or {@code .yml} extension it is parsed directly with {@link
-     * YamlConfigFactory}.
+     * Equivalent to {@link ConfigLoader#parseResources(Class, String)}: resources with a {@code
+     * .yaml} or {@code .yml} extension are parsed as YAML; everything else as HOCON/JSON with
+     * {@link YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param klass class used for classpath-relative resource lookup
      * @param resource classpath resource path
      * @return parsed {@link Config}
      */
     public static Config parseResources(Class<?> klass, String resource) {
-        if (Util.isYaml(resource))
-            return parseYamlDocs(
-                    YamlConfigFactory.DEFAULT.parseResources(klass, resource),
-                    ConfigOriginFactory.newSimple(resource));
-        return com.typesafe.config.ConfigFactory.parseResources(klass, resource, DEFAULT_OPTS);
+        return ConfigLoader.DEFAULT.parseResources(klass, resource);
     }
 
     /**
@@ -719,20 +730,15 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResources(String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended. If the resource name
-     * has a {@code .yaml} or {@code .yml} extension it is parsed directly with {@link
-     * YamlConfigFactory}.
+     * Equivalent to {@link ConfigLoader#parseResources(String)}: resources with a {@code .yaml} or
+     * {@code .yml} extension are parsed as YAML; everything else as HOCON/JSON with {@link
+     * YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param resource classpath resource path
      * @return parsed {@link Config}
      */
     public static Config parseResources(String resource) {
-        if (Util.isYaml(resource))
-            return parseYamlDocs(
-                    YamlConfigFactory.DEFAULT.parseResources(resource),
-                    ConfigOriginFactory.newSimple(resource));
-        return com.typesafe.config.ConfigFactory.parseResources(resource, DEFAULT_OPTS);
+        return ConfigLoader.DEFAULT.parseResources(resource);
     }
 
     /**
@@ -813,14 +819,14 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseString(String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Equivalent to {@link ConfigLoader#parseString(String)}: {@code include} directives pointing
+     * at {@code .yaml} / {@code .yml} files are resolved with {@link YamlConfigIncluder#DEFAULT}.
      *
      * @param s HOCON or JSON string to parse
      * @return parsed {@link Config}
      */
     public static Config parseString(String s) {
-        return com.typesafe.config.ConfigFactory.parseString(s, DEFAULT_OPTS);
+        return ConfigLoader.DEFAULT.parseString(s);
     }
 
     // ── parseMap ──────────────────────────────────────────────────────────────

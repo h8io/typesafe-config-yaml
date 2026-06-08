@@ -418,6 +418,10 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     cfg.getString("app-key") shouldBe "from-application"
   }
 
+  it should "probe application.yaml before application.conf" in {
+    ConfigFactory.load().getString("yaml-app-key") shouldBe "from-application-yaml"
+  }
+
   "ConfigFactory.load(ClassLoader)" should "load application.conf using a given ClassLoader" in {
     val cfg = ConfigFactory.load(getClass.getClassLoader)
     cfg.getString("yaml-key") shouldBe "from-yaml"
@@ -472,6 +476,13 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     val cfg = ConfigFactory.load("cf-main")
     cfg.getString("yaml-key") shouldBe "from-yaml"
     cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigFactory.load("app-yaml-priority")
+    cfg.getString("source") shouldBe "yaml"
+    cfg.getString("yaml-priority-key") shouldBe "only-in-yaml"
+    cfg.getString("conf-priority-key") shouldBe "only-in-conf"
   }
 
   "ConfigFactory.load(ClassLoader, String)" should "load a named resource basename with ClassLoader" in {
