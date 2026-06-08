@@ -243,6 +243,21 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     }
   }
 
+  it should "probe basename.yaml before basename.conf" in {
+    val dir = Files.createTempDirectory("cf-anysyntax-yaml-priority")
+    val yaml = dir.resolve("base.yaml").toFile
+    val conf = dir.resolve("base.conf").toFile
+    Files.write(yaml.toPath, "source: yaml\n".getBytes(StandardCharsets.UTF_8))
+    Files.write(conf.toPath, "source = conf\n".getBytes(StandardCharsets.UTF_8))
+    try {
+      ConfigFactory.parseFileAnySyntax(dir.resolve("base").toFile).getString("source") shouldBe "yaml"
+      ConfigFactory.parseFileAnySyntax(dir.resolve("base").toFile, ConfigParseOptions.defaults())
+        .getString("source") shouldBe "yaml"
+    } finally {
+      yaml.delete(); conf.delete(); dir.toFile.delete(): Unit
+    }
+  }
+
   // ── parseResources (with options) ──────────────────────────────────────────
 
   "ConfigFactory.parseResources(String, ConfigParseOptions)" should "resolve YAML includes from a classpath resource" in {
@@ -272,15 +287,30 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     cfg.getString("conf-key") shouldBe "from-cf-main"
   }
 
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax("app-yaml-priority")
+    cfg.getString("source") shouldBe "yaml"
+  }
+
   "ConfigFactory.parseResourcesAnySyntax(String, ConfigParseOptions)" should
     "find a classpath resource by basename with options" in {
       val cfg = ConfigFactory.parseResourcesAnySyntax("cf-main", ConfigParseOptions.defaults())
       cfg.getString("conf-key") shouldBe "from-cf-main"
     }
 
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax("app-yaml-priority", ConfigParseOptions.defaults())
+    cfg.getString("source") shouldBe "yaml"
+  }
+
   "ConfigFactory.parseResourcesAnySyntax(Class, String)" should "find a classpath resource by basename" in {
     val cfg = ConfigFactory.parseResourcesAnySyntax(getClass, "/cf-main")
     cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax(getClass, "/app-yaml-priority")
+    cfg.getString("source") shouldBe "yaml"
   }
 
   "ConfigFactory.parseResourcesAnySyntax(Class, String, ConfigParseOptions)" should
@@ -289,9 +319,19 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
       cfg.getString("conf-key") shouldBe "from-cf-main"
     }
 
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax(getClass, "/app-yaml-priority", ConfigParseOptions.defaults())
+    cfg.getString("source") shouldBe "yaml"
+  }
+
   "ConfigFactory.parseResourcesAnySyntax(ClassLoader, String)" should "find a classpath resource by basename" in {
     val cfg = ConfigFactory.parseResourcesAnySyntax(getClass.getClassLoader, "cf-main")
     cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax(getClass.getClassLoader, "app-yaml-priority")
+    cfg.getString("source") shouldBe "yaml"
   }
 
   "ConfigFactory.parseResourcesAnySyntax(ClassLoader, String, ConfigParseOptions)" should
@@ -299,6 +339,12 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
       val cfg = ConfigFactory.parseResourcesAnySyntax(getClass.getClassLoader, "cf-main", ConfigParseOptions.defaults())
       cfg.getString("conf-key") shouldBe "from-cf-main"
     }
+
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigFactory.parseResourcesAnySyntax(
+      getClass.getClassLoader, "app-yaml-priority", ConfigParseOptions.defaults())
+    cfg.getString("source") shouldBe "yaml"
+  }
 
   // ── parseApplicationReplacement ────────────────────────────────────────────
 
