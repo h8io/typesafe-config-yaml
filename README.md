@@ -170,8 +170,11 @@ ConfigParseOptions opts = ConfigParseOptions.defaults()
 
 For projects that call `ConfigFactory` throughout the codebase, wiring `YamlConfigIncluder` into every
 `ConfigParseOptions` by hand is impractical. The library ships `io.h8.config.yaml.ConfigFactory` — a static façade
-with the same API as `com.typesafe.config.ConfigFactory` that automatically prepends `YamlConfigIncluder.DEFAULT` to
-every `load` and `parse` call.
+with the same API as `com.typesafe.config.ConfigFactory` that:
+
+- probes `.yaml` / `.yml` resources **before** `.conf` / `.json` / `.properties` in `load()` and `load(String)`,
+- detects `.yaml` / `.yml` by extension in `parse*(File/URL/resource)` and parses them directly,
+- prepends `YamlConfigIncluder.DEFAULT` everywhere else so HOCON `include` directives resolve YAML files.
 
 ### Migration
 
@@ -189,7 +192,7 @@ All existing call sites continue to work. YAML includes resolve automatically, a
 now also accept YAML files directly by extension:
 
 ```java
-// loads application.conf; YAML includes inside it resolve automatically
+// probes application.yaml first, then application.conf; YAML includes resolve automatically
 Config cfg = ConfigFactory.load();
 
 // explicit resource basename — probes .yaml / .yml first, then .conf / .json / .properties
@@ -224,6 +227,7 @@ Config cfg = ConfigFactory.load(opts);   // customFactory is used, no double-wra
 `defaultReference`, `defaultOverrides`, `empty`, `invalidateCaches`, `systemProperties`, and `systemEnvironment`. The
 only methods that do **not** inject an includer are the `load(Config, …)` family — those accept an already-parsed
 config and only perform substitution resolution.
+
 
 ## Configurable instance — `ConfigLoader`
 

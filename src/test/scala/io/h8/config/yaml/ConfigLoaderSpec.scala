@@ -140,6 +140,28 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
     loader.load().getString("app-key") shouldBe "from-application"
   }
 
+  // ── system property overrides ─────────────────────────────────────────────
+
+  "ConfigLoader.load" should "honour config.resource system property" in {
+    System.setProperty("config.resource", "test-resource.yaml")
+    try ConfigLoader.DEFAULT.load().getString("resource") shouldBe "ok"
+    finally System.clearProperty("config.resource"): Unit
+  }
+
+  it should "honour config.file system property" in {
+    val f = writeTemp("file-sys-key: from-sys-file")
+    System.setProperty("config.file", f.getAbsolutePath)
+    try ConfigLoader.DEFAULT.load().getString("file-sys-key") shouldBe "from-sys-file"
+    finally { System.clearProperty("config.file"); f.delete(): Unit }
+  }
+
+  it should "honour config.url system property" in {
+    val f = writeTemp("url-sys-key: from-sys-url")
+    System.setProperty("config.url", f.toURI.toURL.toString)
+    try ConfigLoader.DEFAULT.load().getString("url-sys-key") shouldBe "from-sys-url"
+    finally { System.clearProperty("config.url"); f.delete(): Unit }
+  }
+
   // ── helpers ───────────────────────────────────────────────────────────────
 
   private def writeTemp(content: String): File = {
