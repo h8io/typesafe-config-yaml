@@ -19,8 +19,8 @@ import java.util.Properties;
  * Drop-in replacement for {@link com.typesafe.config.ConfigFactory}.
  *
  * <ul>
- *   <li>{@code load()} and {@code load(String)} probe {@code .yaml} / {@code .yml} resources
- *       before {@code .conf} / {@code .json} / {@code .properties}.
+ *   <li>{@code load()} and {@code load(String)} probe {@code .yaml} / {@code .yml} resources before
+ *       {@code .conf} / {@code .json} / {@code .properties}.
  *   <li>{@code parse*(File/URL/resource)} detect {@code .yaml} / {@code .yml} by extension and
  *       parse them directly with {@link YamlConfigFactory}.
  *   <li>All other methods prepend {@link YamlConfigIncluder#DEFAULT} so that {@code include}
