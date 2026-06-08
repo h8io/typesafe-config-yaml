@@ -164,9 +164,19 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
     docs.get(0).asInstanceOf[ConfigObject].toConfig.getInt("x") shouldBe 1
   }
 
+  it should "reject settings with allowRecursiveKeys enabled" in {
+    val settings = LoadSettings.builder().setAllowRecursiveKeys(true).build()
+    an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(settings)
+  }
+
   "YamlConfigFactory(LoadSettings, maxDepth)" should "respect both parameters" in {
     val settings = LoadSettings.builder().setSchema(new CoreSchema()).build()
     a[ConfigException.Parse] should be thrownBy new YamlConfigFactory(settings, 1).parseString("a:\n  b: 1")
+  }
+
+  it should "reject settings with allowRecursiveKeys enabled" in {
+    val settings = LoadSettings.builder().setAllowRecursiveKeys(true).build()
+    an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(settings, 10)
   }
 
   // ── helpers ────────────────────────────────────────────────────────────────
