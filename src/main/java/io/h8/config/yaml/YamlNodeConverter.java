@@ -60,39 +60,36 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
      *     mapping with a non-scalar key, or contains a numeric scalar that overflows its Java type
      */
     public ConfigValue apply(Node node, ConfigOrigin fileOrigin) {
-        return convert(node, 1, fileOrigin);
+        return convert(node, 1, sourceName(fileOrigin));
     }
 
-    private ConfigValue convert(Node node, int depth, ConfigOrigin fileOrigin) {
+    private ConfigValue convert(Node node, int depth, String source) {
         if (depth > maxDepth)
             throw new ConfigException.Parse(
-                    origin(node, fileOrigin), "Exceeded maximum YAML document depth: " + maxDepth);
+                    origin(node, source), "Exceeded maximum YAML document depth: " + maxDepth);
 
-        if (node instanceof MappingNode)
-            return convertObject((MappingNode) node, depth, fileOrigin);
-        if (node instanceof SequenceNode)
-            return convertList((SequenceNode) node, depth, fileOrigin);
-        if (node instanceof ScalarNode) return convertScalar((ScalarNode) node, fileOrigin);
+        if (node instanceof MappingNode) return convertObject((MappingNode) node, depth, source);
+        if (node instanceof SequenceNode) return convertList((SequenceNode) node, depth, source);
+        if (node instanceof ScalarNode) return convertScalar((ScalarNode) node, source);
 
         throw new ConfigException.Parse(
-                origin(node, fileOrigin),
-                "Unexpected YAML node type: " + node.getClass().getName());
+                origin(node, source), "Unexpected YAML node type: " + node.getClass().getName());
     }
 
-    private ConfigObject convertObject(MappingNode node, int depth, ConfigOrigin fileOrigin) {
+    private ConfigObject convertObject(MappingNode node, int depth, String source) {
         Map<String, ConfigValue> values = new LinkedHashMap<>();
         for (NodeTuple tuple : node.getValue()) {
             Node keyNode = tuple.getKeyNode();
             if (!(keyNode instanceof ScalarNode))
                 throw new ConfigException.Parse(
-                        origin(keyNode, fileOrigin), "YAML mapping key must be a scalar");
+                        origin(keyNode, source), "YAML mapping key must be a scalar");
             String key = ((ScalarNode) keyNode).getValue();
-            ConfigValue incoming = convert(tuple.getValueNode(), depth + 1, fileOrigin);
+            ConfigValue incoming = convert(tuple.getValueNode(), depth + 1, source);
             values.compute(
                     key,
                     (k, existing) -> existing == null ? incoming : mergeValues(existing, incoming));
         }
-        return ConfigValueFactory.fromMap(values, origin(node, fileOrigin).description());
+        return ConfigValueFactory.fromMap(values, origin(node, source).description());
     }
 
     private static ConfigValue mergeValues(ConfigValue existing, ConfigValue incoming) {
@@ -101,21 +98,21 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
         return incoming;
     }
 
-    private ConfigList convertList(SequenceNode node, int depth, ConfigOrigin fileOrigin) {
+    private ConfigList convertList(SequenceNode node, int depth, String source) {
         List<ConfigValue> values = new ArrayList<>();
         for (Node item : node.getValue()) {
-            values.add(convert(item, depth + 1, fileOrigin));
+            values.add(convert(item, depth + 1, source));
         }
-        return ConfigValueFactory.fromIterable(values, origin(node, fileOrigin).description());
+        return ConfigValueFactory.fromIterable(values, origin(node, source).description());
     }
 
-    private ConfigValue convertScalar(ScalarNode node, ConfigOrigin fileOrigin) {
+    private ConfigValue convertScalar(ScalarNode node, String source) {
         try {
             return ConfigValueFactory.fromAnyRef(
-                    scalarValue(node), origin(node, fileOrigin).description());
+                    scalarValue(node), origin(node, source).description());
         } catch (NumberFormatException e) {
             throw new ConfigException.Parse(
-                    origin(node, fileOrigin), "Invalid numeric value '" + node.getValue() + "'", e);
+                    origin(node, source), "Invalid numeric value '" + node.getValue() + "'", e);
         }
     }
 
@@ -157,10 +154,23 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
         }
     }
 
-    private static ConfigOrigin origin(Node node, ConfigOrigin base) {
-        if (node == null) return base;
+    private static String sourceName(ConfigOrigin origin) {
+        if (origin.filename() != null) return origin.filename();
+        if (origin.url() != null) return origin.url().toString();
+        if (origin.resource() != null) return origin.resource();
+        return origin.description();
+    }
+
+    private static ConfigOrigin origin(Node node, String source) {
         return node.getStartMark()
-                .map(mark -> base.withLineNumber(mark.getLine() + 1))
-                .orElse(base);
+                .map(
+                        mark ->
+                                ConfigOriginFactory.newSimple(
+                                        source
+                                                + ", line "
+                                                + (mark.getLine() + 1)
+                                                + ", column "
+                                                + (mark.getColumn() + 1)))
+                .orElse(ConfigOriginFactory.newSimple(source));
     }
 }

@@ -64,6 +64,22 @@ class YamlNodeConverterSpec extends AnyFlatSpec with Matchers {
     a[ConfigException.Parse] should be thrownBy converter.apply(compose("9999999999999999999999999"))
   }
 
+  // ── apply(Node, ConfigOrigin) — file name in errors ────────────────────────
+
+  "YamlNodeConverter.apply(Node, ConfigOrigin)" should "include file name in numeric overflow error" in {
+    val origin = ConfigOriginFactory.newFile("my-config.yaml")
+    val ex = the[ConfigException.Parse] thrownBy
+      converter.apply(compose("9999999999999999999999999"), origin)
+    ex.getMessage should include("my-config.yaml")
+  }
+
+  it should "include file name in depth-exceeded error" in {
+    val origin = ConfigOriginFactory.newFile("my-config.yaml")
+    val ex = the[ConfigException.Parse] thrownBy
+      new YamlNodeConverter(1).apply(compose("a:\n  b: 1"), origin)
+    ex.getMessage should include("my-config.yaml")
+  }
+
   // --- float ---
 
   it should "parse float scalars" in {

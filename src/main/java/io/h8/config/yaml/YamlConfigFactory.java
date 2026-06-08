@@ -94,7 +94,8 @@ public final class YamlConfigFactory {
      * @throws ConfigException.Parse if the text is not valid YAML
      */
     public List<ConfigValue> parseString(String yaml) {
-        return parseAll(new StreamReader(settings, yaml), "<string>");
+        return parseAll(
+                new StreamReader(settings, yaml), ConfigOriginFactory.newSimple("<string>"));
     }
 
     /**
@@ -122,7 +123,7 @@ public final class YamlConfigFactory {
         ConfigOrigin origin = ConfigOriginFactory.newFile(file.getPath());
         try (InputStream in = Files.newInputStream(file.toPath());
                 Reader reader = new InputStreamReader(in, charset)) {
-            return parseAll(new StreamReader(settings, reader), file.getPath());
+            return parseAll(new StreamReader(settings, reader), origin);
         } catch (IOException e) {
             throw new ConfigException.IO(origin, e.getMessage(), e);
         }
@@ -140,7 +141,7 @@ public final class YamlConfigFactory {
         ConfigOrigin origin = ConfigOriginFactory.newURL(url);
         try (InputStream in = url.openStream();
                 Reader reader = new InputStreamReader(in, DEFAULT_CHARSET)) {
-            return parseAll(new StreamReader(settings, reader), url.toString());
+            return parseAll(new StreamReader(settings, reader), origin);
         } catch (IOException e) {
             throw new ConfigException.IO(origin, e.getMessage(), e);
         }
@@ -195,8 +196,7 @@ public final class YamlConfigFactory {
             throw new IllegalArgumentException("LoadSettings must not enable allowRecursiveKeys");
     }
 
-    private List<ConfigValue> parseAll(StreamReader stream, String originDesc) {
-        ConfigOrigin origin = ConfigOriginFactory.newSimple(originDesc);
+    private List<ConfigValue> parseAll(StreamReader stream, ConfigOrigin origin) {
         try {
             Composer composer = new Composer(settings, new ParserImpl(settings, stream));
             return StreamSupport.stream(
