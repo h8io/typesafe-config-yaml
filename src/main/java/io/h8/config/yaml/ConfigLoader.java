@@ -62,8 +62,8 @@ public final class ConfigLoader {
 
     /**
      * Equivalent to {@link #load(String) load("application")}. Honours the {@code config.resource},
-     * {@code config.file}, and {@code config.url} system properties just like
-     * {@link com.typesafe.config.ConfigFactory#load()}.
+     * {@code config.file}, and {@code config.url} system properties just like {@link
+     * com.typesafe.config.ConfigFactory#load()}.
      *
      * @return resolved {@link Config}
      */
@@ -86,7 +86,8 @@ public final class ConfigLoader {
         Config app = "application".equals(basename) ? resolveApplication() : null;
         if (app == null) {
             Config standard =
-                    com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(basename, parseOptions);
+                    com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
+                            basename, parseOptions);
             Config yaml = probeYaml(basename);
             app = yaml != null ? yaml.withFallback(standard) : standard;
         }
@@ -179,8 +180,9 @@ public final class ConfigLoader {
         if (file != null) return parseFile(new File(file));
         String url = System.getProperty("config.url");
         if (url != null)
-            try { return parseURL(new URL(url)); }
-            catch (MalformedURLException e) {
+            try {
+                return parseURL(new URL(url));
+            } catch (MalformedURLException e) {
                 throw new IllegalArgumentException("Invalid config.url: " + url, e);
             }
         return null;
