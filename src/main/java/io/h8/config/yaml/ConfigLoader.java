@@ -3,6 +3,7 @@ package io.h8.config.yaml;
 import com.typesafe.config.*;
 
 import java.io.File;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
 
@@ -60,7 +61,9 @@ public final class ConfigLoader {
     // ── load ─────────────────────────────────────────────────────────────────
 
     /**
-     * Equivalent to {@link #load(String) load("application")}.
+     * Equivalent to {@link #load(String) load("application")}. Honours the {@code config.resource},
+     * {@code config.file}, and {@code config.url} system properties just like
+     * {@link com.typesafe.config.ConfigFactory#load()}.
      *
      * @return resolved {@link Config}
      */
@@ -69,19 +72,25 @@ public final class ConfigLoader {
     }
 
     /**
-     * Loads a named resource basename. {@code {basename}.yaml} and {@code {basename}.yml} are
-     * probed first and take priority over {@code .conf} / {@code .json} / {@code .properties}.
-     * System properties and reference configs are layered as usual.
+     * Loads a named resource basename. For {@code "application"}, honours the {@code
+     * config.resource}, {@code config.file}, and {@code config.url} system properties: if any is
+     * set it is used as the sole application config (no yaml probing). Otherwise, {@code
+     * {basename}.yaml} / {@code {basename}.yml} are probed first and take priority over {@code
+     * .conf} / {@code .json} / {@code .properties}. System properties and reference configs are
+     * layered as usual.
      *
      * @param basename resource basename without extension
      * @return resolved {@link Config}
      */
     public Config load(String basename) {
-        Config standard =
-                com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(basename, parseOptions);
-        Config yaml = probeYaml(basename);
-        Config merged = yaml != null ? yaml.withFallback(standard) : standard;
-        return com.typesafe.config.ConfigFactory.load(effectiveLoader(), merged, resolveOptions);
+        Config app = "application".equals(basename) ? resolveApplication() : null;
+        if (app == null) {
+            Config standard =
+                    com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(basename, parseOptions);
+            Config yaml = probeYaml(basename);
+            app = yaml != null ? yaml.withFallback(standard) : standard;
+        }
+        return com.typesafe.config.ConfigFactory.load(effectiveLoader(), app, resolveOptions);
     }
 
     // ── parse ─────────────────────────────────────────────────────────────────
@@ -161,6 +170,20 @@ public final class ConfigLoader {
      */
     public Config parseString(String s) {
         return com.typesafe.config.ConfigFactory.parseString(s, parseOptions);
+    }
+
+    private Config resolveApplication() {
+        String resource = System.getProperty("config.resource");
+        if (resource != null) return parseResources(resource);
+        String file = System.getProperty("config.file");
+        if (file != null) return parseFile(new File(file));
+        String url = System.getProperty("config.url");
+        if (url != null)
+            try { return parseURL(new URL(url)); }
+            catch (MalformedURLException e) {
+                throw new IllegalArgumentException("Invalid config.url: " + url, e);
+            }
+        return null;
     }
 
     private Config probeYaml(String basename) {
