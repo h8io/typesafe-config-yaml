@@ -86,9 +86,9 @@ ConfigLoader loader = ConfigLoader.builder()
         .classLoader(myLoader)
         .build();
 
-// load — .yaml / .yml probed first, then .conf / .json / .properties
-Config cfg = loader.load();                          // application.yaml → application.conf → reference + system props
-Config cfg = loader.load("application");             // basename.yaml → basename.conf / .json / .properties
+// load — sys-props override first; otherwise .yaml / .yml take priority over .conf / .json / .properties
+Config cfg = loader.load();              // application.yaml > application.conf > reference + system props
+Config cfg = loader.load("basename");    // basename.yaml > basename.conf / .json / .properties
 
 // parse — .yaml / .yml detected by extension, everything else treated as HOCON/JSON
 Config cfg = loader.parseFile(new File("app.yaml"));

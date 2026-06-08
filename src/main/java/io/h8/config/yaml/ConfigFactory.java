@@ -19,8 +19,9 @@ import java.util.Properties;
  * Drop-in replacement for {@link com.typesafe.config.ConfigFactory}.
  *
  * <ul>
- *   <li>{@code load()} and {@code load(String)} probe {@code .yaml} / {@code .yml} resources before
- *       {@code .conf} / {@code .json} / {@code .properties}.
+ *   <li>{@code load()} and {@code load(String)} give priority to {@code .yaml} / {@code .yml} over
+ *       {@code .conf} / {@code .json} / {@code .properties}; {@code load()} also honours the {@code
+ *       config.resource}, {@code config.file}, and {@code config.url} system properties.
  *   <li>{@code parse*(File/URL/resource)} detect {@code .yaml} / {@code .yml} by extension and
  *       parse them directly with {@link YamlConfigFactory}.
  *   <li>All other methods prepend {@link YamlConfigIncluder#DEFAULT} so that {@code include}
@@ -94,10 +95,12 @@ public final class ConfigFactory {
     // ── load ─────────────────────────────────────────────────────────────────
 
     /**
-     * Loads the standard application config. Equivalent to {@link ConfigLoader#load()}: {@code
-     * application.yaml} / {@code application.yml} are probed first; if absent, falls back to {@code
-     * application.conf} / {@code .json} / {@code .properties}. System properties and reference
-     * configs are layered as usual.
+     * Loads the standard application config. Equivalent to {@link ConfigLoader#load()}: honours the
+     * {@code config.resource}, {@code config.file}, and {@code config.url} system properties just
+     * like {@link com.typesafe.config.ConfigFactory#load()}; if none is set, {@code
+     * application.yaml} / {@code application.yml} take priority over {@code application.conf} /
+     * {@code .json} / {@code .properties}. System properties and reference configs are layered as
+     * usual.
      *
      * @return resolved {@link Config}
      */
@@ -106,9 +109,10 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
-     * falls back to {@code .conf} / {@code .json} / {@code .properties}. System properties and
-     * reference configs are layered as usual.
+     * Honours the {@code config.resource}, {@code config.file}, and {@code config.url} system
+     * properties; if none is set, {@code application.yaml} / {@code application.yml} take priority
+     * over {@code .conf} / {@code .json} / {@code .properties}. System properties and reference
+     * configs are layered as usual.
      *
      * @param loader class loader used to find resources
      * @return resolved {@link Config}
@@ -118,9 +122,10 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code application.yaml} / {@code application.yml} first, then falls back to {@code
-     * .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to
-     * {@code parseOptions} automatically.
+     * Honours the {@code config.resource}, {@code config.file}, and {@code config.url} system
+     * properties; if none is set, {@code application.yaml} / {@code application.yml} take priority
+     * over {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is
+     * prepended to {@code parseOptions} automatically.
      *
      * @param parseOptions parse options
      * @return resolved {@link Config}
@@ -130,9 +135,10 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
-     * falls back to {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder}
-     * is prepended to {@code parseOptions} automatically.
+     * Honours the {@code config.resource}, {@code config.file}, and {@code config.url} system
+     * properties; if none is set, {@code application.yaml} / {@code application.yml} take priority
+     * over {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is
+     * prepended to {@code parseOptions} automatically.
      *
      * @param loader class loader used to find resources
      * @param parseOptions parse options
@@ -143,8 +149,9 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
-     * falls back to {@code .conf} / {@code .json} / {@code .properties}.
+     * Honours the {@code config.resource}, {@code config.file}, and {@code config.url} system
+     * properties; if none is set, {@code application.yaml} / {@code application.yml} take priority
+     * over {@code .conf} / {@code .json} / {@code .properties}.
      *
      * @param loader class loader used to find resources
      * @param resolveOptions substitution resolution options
@@ -159,9 +166,10 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code application.yaml} / {@code application.yml} first, then falls back to {@code
-     * .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to
-     * {@code parseOptions} automatically.
+     * Honours the {@code config.resource}, {@code config.file}, and {@code config.url} system
+     * properties; if none is set, {@code application.yaml} / {@code application.yml} take priority
+     * over {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is
+     * prepended to {@code parseOptions} automatically.
      *
      * @param parseOptions parse options
      * @param resolveOptions substitution resolution options
@@ -177,9 +185,10 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code application.yaml} / {@code application.yml} first using {@code loader}, then
-     * falls back to {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder}
-     * is prepended to {@code parseOptions} automatically.
+     * Honours the {@code config.resource}, {@code config.file}, and {@code config.url} system
+     * properties; if none is set, {@code application.yaml} / {@code application.yml} take priority
+     * over {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is
+     * prepended to {@code parseOptions} automatically.
      *
      * @param loader class loader used to find resources
      * @param parseOptions parse options
@@ -200,8 +209,8 @@ public final class ConfigFactory {
 
     /**
      * Loads a named resource basename. Equivalent to {@link ConfigLoader#load(String)}: {@code
-     * {basename}.yaml} / {@code {basename}.yml} are probed first, then {@code .conf} / {@code
-     * .json} / {@code .properties}. System properties and reference configs are layered as usual.
+     * {basename}.yaml} / {@code {basename}.yml} take priority over {@code .conf} / {@code .json} /
+     * {@code .properties}. System properties and reference configs are layered as usual.
      *
      * @param resourceBasename resource basename (e.g. {@code application})
      * @return resolved {@link Config}
@@ -211,8 +220,8 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code {basename}.yaml} / {@code {basename}.yml} first using {@code loader}, then
-     * falls back to {@code .conf} / {@code .json} / {@code .properties}.
+     * {@code {basename}.yaml} / {@code {basename}.yml} take priority over {@code .conf} / {@code
+     * .json} / {@code .properties}.
      *
      * @param loader class loader used to find resources
      * @param resourceBasename resource basename (e.g. {@code application})
@@ -223,9 +232,9 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code {basename}.yaml} / {@code {basename}.yml} first, then falls back to {@code
-     * .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to
-     * {@code parseOptions} automatically.
+     * {@code {basename}.yaml} / {@code {basename}.yml} take priority over {@code .conf} / {@code
+     * .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to {@code parseOptions}
+     * automatically.
      *
      * @param resourceBasename resource basename (e.g. {@code application})
      * @param parseOptions parse options
@@ -244,9 +253,9 @@ public final class ConfigFactory {
     }
 
     /**
-     * Probes {@code {basename}.yaml} / {@code {basename}.yml} first using {@code loader}, then
-     * falls back to {@code .conf} / {@code .json} / {@code .properties}. {@link YamlConfigIncluder}
-     * is prepended to {@code parseOptions} automatically.
+     * {@code {basename}.yaml} / {@code {basename}.yml} take priority over {@code .conf} / {@code
+     * .json} / {@code .properties}. {@link YamlConfigIncluder} is prepended to {@code parseOptions}
+     * automatically.
      *
      * @param loader class loader used to find resources
      * @param resourceBasename resource basename (e.g. {@code application})
