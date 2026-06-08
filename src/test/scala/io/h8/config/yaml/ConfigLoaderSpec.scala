@@ -18,6 +18,11 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
     cfg.getString("app-key") shouldBe "from-application"
   }
 
+  it should "probe application.yaml before application.conf" in {
+    val cfg = ConfigLoader.DEFAULT.load()
+    cfg.getString("yaml-app-key") shouldBe "from-application-yaml"
+  }
+
   "ConfigLoader.builder().build()" should "behave identically to DEFAULT" in {
     val cfg = ConfigLoader.builder().build().load()
     cfg.getString("yaml-key") shouldBe "from-yaml"
@@ -29,6 +34,13 @@ class ConfigLoaderSpec extends AnyFlatSpec with Matchers {
     val cfg = ConfigLoader.DEFAULT.load("cf-main")
     cfg.getString("yaml-key") shouldBe "from-yaml"
     cfg.getString("conf-key") shouldBe "from-cf-main"
+  }
+
+  it should "probe basename.yaml before basename.conf" in {
+    val cfg = ConfigLoader.DEFAULT.load("app-yaml-priority")
+    cfg.getString("source") shouldBe "yaml"
+    cfg.getString("yaml-priority-key") shouldBe "only-in-yaml"
+    cfg.getString("conf-priority-key") shouldBe "only-in-conf"
   }
 
   // ── parseFile ─────────────────────────────────────────────────────────────
