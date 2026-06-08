@@ -27,7 +27,7 @@ import java.util.Objects;
  *
  * <pre>{@code
  * ConfigParseOptions opts = ConfigParseOptions.defaults()
- *         .setIncluder(YamlConfigIncluder.DEFAULT);
+ *         .prependIncluder(YamlConfigIncluder.DEFAULT);
  * Config cfg = ConfigFactory.parseFile(configFile, opts);
  * }</pre>
  */
