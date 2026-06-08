@@ -226,12 +226,18 @@ shared-key = "from-main"        # layer 4 – highest priority
 
 ```yaml
 # defaults.yaml
-database.host: localhost
-database.port: 5432
+database:
+  host: localhost
+  port: 5432
 shared-key: from-yaml
 ```
 
 Result: `database.host` and `database.port` come from YAML; `shared-key` is `"from-main"`.
+
+> **YAML vs HOCON keys:** In HOCON, `server.port = 8080` is a path — it creates a nested object `{server: {port: 8080}}`.
+> In YAML, `server.port: 8080` is a plain string key with a literal dot — no nesting is created, and
+> `cfg.getString("server.port")` will throw `ConfigException.Missing`. Always use YAML indentation to produce nested
+> objects that typesafe-config paths can reach.
 
 ### Multi-document YAML in an include
 
@@ -239,10 +245,12 @@ When an included YAML file contains multiple documents, they are merged with the
 
 ```yaml
 # layered.yaml
-database.pool-size: 10    # document 1 — highest priority
+database:
+  pool-size: 10    # document 1 — highest priority
 ---
-database.pool-size: 5     # document 2 — lower priority (ignored for this key)
-database.timeout: 30s     # document 2 — only source for this key (kept)
+database:
+  pool-size: 5     # document 2 — lower priority (ignored for this key)
+  timeout: 30s     # document 2 — only source for this key (kept)
 ```
 
 ```hocon
@@ -251,7 +259,9 @@ include "layered.yaml"
 # database.timeout   = 30s
 ```
 
-`null` documents are silently skipped. A document that is a sequence or scalar causes `ConfigException.Parse`.
+A document whose root is `null` (e.g. an empty `---` separator) is silently skipped.
+`null` values inside a document are kept as-is, mapped to `null` in the resulting `ConfigObject`.
+A document whose root is a sequence or scalar causes `ConfigException.Parse`.
 
 ### Custom factory in the includer
 
