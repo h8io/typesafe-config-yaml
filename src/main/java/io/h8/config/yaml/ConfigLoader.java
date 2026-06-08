@@ -61,36 +61,40 @@ public final class ConfigLoader {
     // ── load ─────────────────────────────────────────────────────────────────
 
     /**
-     * Equivalent to {@link #load(String) load("application")}. Honours the {@code config.resource},
-     * {@code config.file}, and {@code config.url} system properties just like {@link
-     * com.typesafe.config.ConfigFactory#load()}.
+     * Loads the standard application config. Honours the {@code config.resource}, {@code
+     * config.file}, and {@code config.url} system properties just like {@link
+     * com.typesafe.config.ConfigFactory#load()}: if any is set it is used as the sole application
+     * config (no YAML probing). Otherwise, {@code application.yaml} / {@code application.yml} take
+     * priority over {@code application.conf} / {@code .json} / {@code .properties}. System
+     * properties and reference configs are layered as usual.
      *
      * @return resolved {@link Config}
      */
     public Config load() {
-        return load("application");
+        Config app = resolveApplication();
+        if (app == null) {
+            Config standard =
+                    com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
+                            "application", parseOptions);
+            Config yaml = probeYaml("application");
+            app = yaml != null ? yaml.withFallback(standard) : standard;
+        }
+        return com.typesafe.config.ConfigFactory.load(effectiveLoader(), app, resolveOptions);
     }
 
     /**
-     * Loads a named resource basename. For {@code "application"}, honours the {@code
-     * config.resource}, {@code config.file}, and {@code config.url} system properties: if any is
-     * set it is used as the sole application config (no yaml probing). Otherwise, {@code
-     * {basename}.yaml} / {@code {basename}.yml} are probed first and take priority over {@code
-     * .conf} / {@code .json} / {@code .properties}. System properties and reference configs are
-     * layered as usual.
+     * Loads a named resource basename. {@code {basename}.yaml} / {@code {basename}.yml} take
+     * priority over {@code .conf} / {@code .json} / {@code .properties}. System properties and
+     * reference configs are layered as usual.
      *
      * @param basename resource basename without extension
      * @return resolved {@link Config}
      */
     public Config load(String basename) {
-        Config app = "application".equals(basename) ? resolveApplication() : null;
-        if (app == null) {
-            Config standard =
-                    com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
-                            basename, parseOptions);
-            Config yaml = probeYaml(basename);
-            app = yaml != null ? yaml.withFallback(standard) : standard;
-        }
+        Config standard =
+                com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(basename, parseOptions);
+        Config yaml = probeYaml(basename);
+        Config app = yaml != null ? yaml.withFallback(standard) : standard;
         return com.typesafe.config.ConfigFactory.load(effectiveLoader(), app, resolveOptions);
     }
 
