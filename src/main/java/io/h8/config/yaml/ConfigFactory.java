@@ -57,6 +57,40 @@ public final class ConfigFactory {
         return cl != null ? cl : Thread.currentThread().getContextClassLoader();
     }
 
+    private static Config probeYamlFile(File base, YamlConfigFactory factory) {
+        File yaml = new File(base.getPath() + ".yaml");
+        if (yaml.exists())
+            return parseYamlDocs(
+                    factory.parseFile(yaml), ConfigOriginFactory.newFile(yaml.getPath()));
+        File yml = new File(base.getPath() + ".yml");
+        if (yml.exists())
+            return parseYamlDocs(
+                    factory.parseFile(yml), ConfigOriginFactory.newFile(yml.getPath()));
+        return null;
+    }
+
+    private static Config probeYamlResource(
+            ClassLoader loader, String resource, YamlConfigFactory factory) {
+        URL yaml = loader.getResource(resource + ".yaml");
+        if (yaml != null)
+            return parseYamlDocs(factory.parseURL(yaml), ConfigOriginFactory.newURL(yaml));
+        URL yml = loader.getResource(resource + ".yml");
+        if (yml != null)
+            return parseYamlDocs(factory.parseURL(yml), ConfigOriginFactory.newURL(yml));
+        return null;
+    }
+
+    private static Config probeYamlResource(
+            Class<?> klass, String resource, YamlConfigFactory factory) {
+        URL yaml = klass.getResource(resource + ".yaml");
+        if (yaml != null)
+            return parseYamlDocs(factory.parseURL(yaml), ConfigOriginFactory.newURL(yaml));
+        URL yml = klass.getResource(resource + ".yml");
+        if (yml != null)
+            return parseYamlDocs(factory.parseURL(yml), ConfigOriginFactory.newURL(yml));
+        return null;
+    }
+
     // ── load ─────────────────────────────────────────────────────────────────
 
     /**
@@ -570,25 +604,31 @@ public final class ConfigFactory {
     // ── parseFileAnySyntax ────────────────────────────────────────────────────
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseFileAnySyntax(File,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended to {@code options}.
+     * Probes {@code file.yaml} / {@code file.yml} first; if absent, falls back to {@link
+     * com.typesafe.config.ConfigFactory#parseFileAnySyntax(File, ConfigParseOptions)} with {@link
+     * YamlConfigIncluder} from {@code options} prepended.
      *
      * @param file base file path (extension is inferred)
      * @param options parse options
      * @return parsed {@link Config}
      */
     public static Config parseFileAnySyntax(File file, ConfigParseOptions options) {
+        Config yaml = probeYamlFile(file, YamlConfigIncluder.factoryFor(options));
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseFileAnySyntax(file, withIncluder(options));
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseFileAnySyntax(File,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Probes {@code file.yaml} / {@code file.yml} first; if absent, falls back to {@link
+     * com.typesafe.config.ConfigFactory#parseFileAnySyntax(File, ConfigParseOptions)} with {@link
+     * YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param file base file path (extension is inferred)
      * @return parsed {@link Config}
      */
     public static Config parseFileAnySyntax(File file) {
+        Config yaml = probeYamlFile(file, YamlConfigFactory.DEFAULT);
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseFileAnySyntax(file, DEFAULT_OPTS);
     }
 
@@ -627,8 +667,9 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(Class, String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended to {@code options}.
+     * Probes {@code resource.yaml} / {@code resource.yml} first (relative to {@code klass}); if
+     * absent, falls back to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(Class,
+     * String, ConfigParseOptions)} with {@link YamlConfigIncluder} from {@code options} prepended.
      *
      * @param klass class used for classpath-relative resource lookup
      * @param resource classpath resource path (extension is inferred)
@@ -637,19 +678,24 @@ public final class ConfigFactory {
      */
     public static Config parseResourcesAnySyntax(
             Class<?> klass, String resource, ConfigParseOptions options) {
+        Config yaml = probeYamlResource(klass, resource, YamlConfigIncluder.factoryFor(options));
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
                 klass, resource, withIncluder(options));
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(Class, String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Probes {@code resource.yaml} / {@code resource.yml} first (relative to {@code klass}); if
+     * absent, falls back to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(Class,
+     * String, ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param klass class used for classpath-relative resource lookup
      * @param resource classpath resource path (extension is inferred)
      * @return parsed {@link Config}
      */
     public static Config parseResourcesAnySyntax(Class<?> klass, String resource) {
+        Config yaml = probeYamlResource(klass, resource, YamlConfigFactory.DEFAULT);
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
                 klass, resource, DEFAULT_OPTS);
     }
@@ -692,9 +738,9 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(ClassLoader,
-     * String, ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended to {@code
-     * options}.
+     * Probes {@code resource.yaml} / {@code resource.yml} first via {@code loader}; if absent,
+     * falls back to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(ClassLoader,
+     * String, ConfigParseOptions)} with {@link YamlConfigIncluder} from {@code options} prepended.
      *
      * @param loader class loader used to find the resource
      * @param resource classpath resource path (extension is inferred)
@@ -703,12 +749,15 @@ public final class ConfigFactory {
      */
     public static Config parseResourcesAnySyntax(
             ClassLoader loader, String resource, ConfigParseOptions options) {
+        Config yaml = probeYamlResource(loader, resource, YamlConfigIncluder.factoryFor(options));
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
                 loader, resource, withIncluder(options));
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(ClassLoader,
+     * Probes {@code resource.yaml} / {@code resource.yml} first via {@code loader}; if absent,
+     * falls back to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(ClassLoader,
      * String, ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param loader class loader used to find the resource
@@ -716,6 +765,8 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResourcesAnySyntax(ClassLoader loader, String resource) {
+        Config yaml = probeYamlResource(loader, resource, YamlConfigFactory.DEFAULT);
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
                 loader, resource, DEFAULT_OPTS);
     }
@@ -750,26 +801,40 @@ public final class ConfigFactory {
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended to {@code options}.
+     * Probes {@code resource.yaml} / {@code resource.yml} first via the class loader from {@code
+     * options}; if absent, falls back to {@link
+     * com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(String, ConfigParseOptions)} with
+     * {@link YamlConfigIncluder} from {@code options} prepended.
      *
      * @param resource classpath resource path (extension is inferred)
      * @param options parse options
      * @return parsed {@link Config}
      */
     public static Config parseResourcesAnySyntax(String resource, ConfigParseOptions options) {
+        Config yaml =
+                probeYamlResource(
+                        loaderFrom(options), resource, YamlConfigIncluder.factoryFor(options));
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(
                 resource, withIncluder(options));
     }
 
     /**
-     * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * Probes {@code resource.yaml} / {@code resource.yml} first via the thread-context class
+     * loader; if absent, falls back to {@link
+     * com.typesafe.config.ConfigFactory#parseResourcesAnySyntax(String, ConfigParseOptions)} with
+     * {@link YamlConfigIncluder#DEFAULT} prepended.
      *
      * @param resource classpath resource path (extension is inferred)
      * @return parsed {@link Config}
      */
     public static Config parseResourcesAnySyntax(String resource) {
+        Config yaml =
+                probeYamlResource(
+                        Thread.currentThread().getContextClassLoader(),
+                        resource,
+                        YamlConfigFactory.DEFAULT);
+        if (yaml != null) return yaml;
         return com.typesafe.config.ConfigFactory.parseResourcesAnySyntax(resource, DEFAULT_OPTS);
     }
 
