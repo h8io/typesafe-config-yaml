@@ -5,7 +5,6 @@ import com.typesafe.config.*;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -82,7 +81,7 @@ public final class YamlConfigIncluder
      */
     @Override
     public ConfigObject include(ConfigIncludeContext context, String what) {
-        if (!isYaml(what)) return delegateInclude(context, what);
+        if (!Util.isYaml(what)) return delegateInclude(context, what);
 
         // 1. Context-relative resolution: handles paths relative to the including file
         ConfigParseable relative = context.relativeTo(what);
@@ -118,7 +117,7 @@ public final class YamlConfigIncluder
      */
     @Override
     public ConfigObject includeFile(ConfigIncludeContext context, File file) {
-        if (!isYaml(file.getName())) return delegateFile(context, file);
+        if (!Util.isYaml(file.getName())) return delegateFile(context, file);
         if (!file.isFile()) {
             if (context.parseOptions().getAllowMissing()) return empty();
             throw new ConfigException.IO(
@@ -139,7 +138,7 @@ public final class YamlConfigIncluder
      */
     @Override
     public ConfigObject includeResources(ConfigIncludeContext context, String resource) {
-        if (!isYaml(resource)) return delegateResources(context, resource);
+        if (!Util.isYaml(resource)) return delegateResources(context, resource);
         ClassLoader loader = classLoader(context);
         URL url = loader.getResource(resource);
         if (url == null) {
@@ -163,7 +162,7 @@ public final class YamlConfigIncluder
      */
     @Override
     public ConfigObject includeURL(ConfigIncludeContext context, URL url) {
-        return isYaml(urlPath(url))
+        return Util.isYaml(Util.urlPath(url))
                 ? parseAndMerge(url, ConfigOriginFactory.newURL(url))
                 : delegateURL(context, url);
     }
@@ -214,15 +213,11 @@ public final class YamlConfigIncluder
         return !"file".equals(url.getProtocol()) || new File(url.getFile()).isFile();
     }
 
-    private static boolean isYaml(String name) {
-        String lower = name.toLowerCase(Locale.ROOT);
-        return lower.endsWith(".yaml") || lower.endsWith(".yml");
-    }
-
-    private static String urlPath(URL url) {
-        String path = url.getPath();
-        int q = path.indexOf('?');
-        return q >= 0 ? path.substring(0, q) : path;
+    static YamlConfigFactory factoryFor(ConfigParseOptions opts) {
+        ConfigIncluder includer = opts.getIncluder();
+        return includer instanceof YamlConfigIncluder
+                ? ((YamlConfigIncluder) includer).factory
+                : YamlConfigFactory.DEFAULT;
     }
 
     private static ClassLoader classLoader(ConfigIncludeContext context) {

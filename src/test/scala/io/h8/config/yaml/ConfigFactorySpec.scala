@@ -4,7 +4,7 @@ import com.typesafe.config.ConfigParseOptions
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.io.StringReader
+import java.io.{File, StringReader}
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.util.Properties
@@ -133,6 +133,40 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
     val reader = new StringReader("""include "int-a.yaml"""")
     val cfg = ConfigFactory.parseReader(reader, ConfigParseOptions.defaults())
     cfg.getString("yaml-key") shouldBe "from-yaml"
+  }
+
+  it should "parse a YAML file directly when given a .yaml extension" in {
+    val file = writeTemp("direct-key: direct-value")
+    try {
+      val cfg = ConfigFactory.parseFile(file)
+      cfg.getString("direct-key") shouldBe "direct-value"
+    } finally file.delete(): Unit
+  }
+
+  it should "parse a YAML file directly with explicit ConfigParseOptions" in {
+    val file = writeTemp("direct-key: direct-value")
+    try {
+      val cfg = ConfigFactory.parseFile(file, ConfigParseOptions.defaults())
+      cfg.getString("direct-key") shouldBe "direct-value"
+    } finally file.delete(): Unit
+  }
+
+  // ── parseURL (YAML direct) ─────────────────────────────────────────────────
+
+  "ConfigFactory.parseURL" should "parse a YAML URL directly when the path has a .yaml extension" in {
+    val file = writeTemp("url-key: url-value")
+    try {
+      val cfg = ConfigFactory.parseURL(file.toURI.toURL)
+      cfg.getString("url-key") shouldBe "url-value"
+    } finally file.delete(): Unit
+  }
+
+  it should "parse a YAML URL directly with explicit ConfigParseOptions" in {
+    val file = writeTemp("url-key: url-value")
+    try {
+      val cfg = ConfigFactory.parseURL(file.toURI.toURL, ConfigParseOptions.defaults())
+      cfg.getString("url-key") shouldBe "url-value"
+    } finally file.delete(): Unit
   }
 
   // ── parseResources ─────────────────────────────────────────────────────────
@@ -496,4 +530,50 @@ class ConfigFactorySpec extends AnyFlatSpec with Matchers {
       )
       cfg.getString("load-key") shouldBe "load-value"
     }
+
+  // ── parseResources (YAML direct) ───────────────────────────────────────────
+
+  "ConfigFactory.parseResources(String) with .yaml" should "parse a YAML classpath resource directly" in {
+    val cfg = ConfigFactory.parseResources("test-resource.yaml")
+    cfg.getString("resource") shouldBe "ok"
+  }
+
+  it should "parse a YAML classpath resource directly with explicit options (null classloader)" in {
+    val cfg = ConfigFactory.parseResources("test-resource.yaml", ConfigParseOptions.defaults())
+    cfg.getString("resource") shouldBe "ok"
+  }
+
+  it should "parse a YAML classpath resource directly with explicit options (non-null classloader)" in {
+    val opts = ConfigParseOptions.defaults().setClassLoader(getClass.getClassLoader)
+    val cfg = ConfigFactory.parseResources("test-resource.yaml", opts)
+    cfg.getString("resource") shouldBe "ok"
+  }
+
+  "ConfigFactory.parseResources(Class, String) with .yaml" should "parse a YAML classpath resource directly" in {
+    val cfg = ConfigFactory.parseResources(getClass, "/test-resource.yaml")
+    cfg.getString("resource") shouldBe "ok"
+  }
+
+  it should "parse a YAML classpath resource directly with explicit options" in {
+    val cfg = ConfigFactory.parseResources(getClass, "/test-resource.yaml", ConfigParseOptions.defaults())
+    cfg.getString("resource") shouldBe "ok"
+  }
+
+  "ConfigFactory.parseResources(ClassLoader, String) with .yaml" should "parse a YAML classpath resource directly" in {
+    val cfg = ConfigFactory.parseResources(getClass.getClassLoader, "test-resource.yaml")
+    cfg.getString("resource") shouldBe "ok"
+  }
+
+  it should "parse a YAML classpath resource directly with explicit options" in {
+    val cfg = ConfigFactory.parseResources(getClass.getClassLoader, "test-resource.yaml", ConfigParseOptions.defaults())
+    cfg.getString("resource") shouldBe "ok"
+  }
+
+  // ── helpers ────────────────────────────────────────────────────────────────
+
+  private def writeTemp(content: String): File = {
+    val f = Files.createTempFile("cf-spec", ".yaml").toFile
+    Files.write(f.toPath, content.getBytes(StandardCharsets.UTF_8))
+    f
+  }
 }
