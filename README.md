@@ -240,7 +240,8 @@ plain string.
 
 **Recursive aliases** are rejected. A YAML anchor that refers back to a parent node (creating a cycle) causes
 `ConfigException.Parse`. This is the snakeyaml-engine default and is intentional — cycles cannot be represented in
-typesafe-config's immutable value model.
+typesafe-config's immutable value model. As a special case, `LoadSettings` with `allowRecursiveKeys` enabled is
+rejected at construction time with `IllegalArgumentException`.
 
 **Relative paths in `include`** are resolved in this order:
 
