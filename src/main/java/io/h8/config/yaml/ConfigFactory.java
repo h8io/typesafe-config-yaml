@@ -1,12 +1,16 @@
 package io.h8.config.yaml;
 
 import com.typesafe.config.Config;
+import com.typesafe.config.ConfigOrigin;
+import com.typesafe.config.ConfigOriginFactory;
 import com.typesafe.config.ConfigParseOptions;
 import com.typesafe.config.ConfigResolveOptions;
+import com.typesafe.config.ConfigValue;
 
 import java.io.File;
 import java.io.Reader;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -32,6 +36,17 @@ public final class ConfigFactory {
         return opts.getIncluder() instanceof YamlConfigIncluder
                 ? opts
                 : opts.prependIncluder(YamlConfigIncluder.DEFAULT);
+    }
+
+    // ── YAML dispatch helpers ─────────────────────────────────────────────────
+
+    private static Config parseYamlDocs(List<ConfigValue> docs, ConfigOrigin origin) {
+        return YamlConfigIncluder.mergeDocuments(docs, origin).toConfig();
+    }
+
+    private static ClassLoader loaderFrom(ConfigParseOptions opts) {
+        ClassLoader cl = opts.getClassLoader();
+        return cl != null ? cl : Thread.currentThread().getContextClassLoader();
     }
 
     // ── load ─────────────────────────────────────────────────────────────────
@@ -472,17 +487,25 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseURL(URL url, ConfigParseOptions options) {
+        if (Util.isYaml(Util.urlPath(url)))
+            return parseYamlDocs(
+                    YamlConfigIncluder.factoryFor(options).parseURL(url),
+                    ConfigOriginFactory.newURL(url));
         return com.typesafe.config.ConfigFactory.parseURL(url, withIncluder(options));
     }
 
     /**
      * Equivalent to {@link com.typesafe.config.ConfigFactory#parseURL(URL, ConfigParseOptions)}
-     * with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * with {@link YamlConfigIncluder#DEFAULT} prepended. If the URL path has a {@code .yaml} or
+     * {@code .yml} extension it is parsed directly with {@link YamlConfigFactory}.
      *
      * @param url URL to parse
      * @return parsed {@link Config}
      */
     public static Config parseURL(URL url) {
+        if (Util.isYaml(Util.urlPath(url)))
+            return parseYamlDocs(
+                    YamlConfigFactory.DEFAULT.parseURL(url), ConfigOriginFactory.newURL(url));
         return com.typesafe.config.ConfigFactory.parseURL(url, DEFAULT_OPTS);
     }
 
@@ -497,17 +520,26 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseFile(File file, ConfigParseOptions options) {
+        if (Util.isYaml(file.getName()))
+            return parseYamlDocs(
+                    YamlConfigIncluder.factoryFor(options).parseFile(file),
+                    ConfigOriginFactory.newFile(file.getPath()));
         return com.typesafe.config.ConfigFactory.parseFile(file, withIncluder(options));
     }
 
     /**
      * Equivalent to {@link com.typesafe.config.ConfigFactory#parseFile(File, ConfigParseOptions)}
-     * with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * with {@link YamlConfigIncluder#DEFAULT} prepended. If the file has a {@code .yaml} or {@code
+     * .yml} extension it is parsed directly with {@link YamlConfigFactory}.
      *
      * @param file file to parse
      * @return parsed {@link Config}
      */
     public static Config parseFile(File file) {
+        if (Util.isYaml(file.getName()))
+            return parseYamlDocs(
+                    YamlConfigFactory.DEFAULT.parseFile(file),
+                    ConfigOriginFactory.newFile(file.getPath()));
         return com.typesafe.config.ConfigFactory.parseFile(file, DEFAULT_OPTS);
     }
 
@@ -549,19 +581,29 @@ public final class ConfigFactory {
      */
     public static Config parseResources(
             Class<?> klass, String resource, ConfigParseOptions options) {
+        if (Util.isYaml(resource))
+            return parseYamlDocs(
+                    YamlConfigIncluder.factoryFor(options).parseResources(klass, resource),
+                    ConfigOriginFactory.newSimple(resource));
         return com.typesafe.config.ConfigFactory.parseResources(
                 klass, resource, withIncluder(options));
     }
 
     /**
      * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResources(Class, String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended. If the resource name
+     * has a {@code .yaml} or {@code .yml} extension it is parsed directly with {@link
+     * YamlConfigFactory}.
      *
      * @param klass class used for classpath-relative resource lookup
      * @param resource classpath resource path
      * @return parsed {@link Config}
      */
     public static Config parseResources(Class<?> klass, String resource) {
+        if (Util.isYaml(resource))
+            return parseYamlDocs(
+                    YamlConfigFactory.DEFAULT.parseResources(klass, resource),
+                    ConfigOriginFactory.newSimple(resource));
         return com.typesafe.config.ConfigFactory.parseResources(klass, resource, DEFAULT_OPTS);
     }
 
@@ -604,19 +646,29 @@ public final class ConfigFactory {
      */
     public static Config parseResources(
             ClassLoader loader, String resource, ConfigParseOptions options) {
+        if (Util.isYaml(resource))
+            return parseYamlDocs(
+                    YamlConfigIncluder.factoryFor(options).parseResources(loader, resource),
+                    ConfigOriginFactory.newSimple(resource));
         return com.typesafe.config.ConfigFactory.parseResources(
                 loader, resource, withIncluder(options));
     }
 
     /**
      * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResources(ClassLoader, String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended. If the resource name
+     * has a {@code .yaml} or {@code .yml} extension it is parsed directly with {@link
+     * YamlConfigFactory}.
      *
      * @param loader class loader used to find the resource
      * @param resource classpath resource path
      * @return parsed {@link Config}
      */
     public static Config parseResources(ClassLoader loader, String resource) {
+        if (Util.isYaml(resource))
+            return parseYamlDocs(
+                    YamlConfigFactory.DEFAULT.parseResources(loader, resource),
+                    ConfigOriginFactory.newSimple(resource));
         return com.typesafe.config.ConfigFactory.parseResources(loader, resource, DEFAULT_OPTS);
     }
 
@@ -658,17 +710,28 @@ public final class ConfigFactory {
      * @return parsed {@link Config}
      */
     public static Config parseResources(String resource, ConfigParseOptions options) {
+        if (Util.isYaml(resource))
+            return parseYamlDocs(
+                    YamlConfigIncluder.factoryFor(options)
+                            .parseResources(loaderFrom(options), resource),
+                    ConfigOriginFactory.newSimple(resource));
         return com.typesafe.config.ConfigFactory.parseResources(resource, withIncluder(options));
     }
 
     /**
      * Equivalent to {@link com.typesafe.config.ConfigFactory#parseResources(String,
-     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended.
+     * ConfigParseOptions)} with {@link YamlConfigIncluder#DEFAULT} prepended. If the resource name
+     * has a {@code .yaml} or {@code .yml} extension it is parsed directly with {@link
+     * YamlConfigFactory}.
      *
      * @param resource classpath resource path
      * @return parsed {@link Config}
      */
     public static Config parseResources(String resource) {
+        if (Util.isYaml(resource))
+            return parseYamlDocs(
+                    YamlConfigFactory.DEFAULT.parseResources(resource),
+                    ConfigOriginFactory.newSimple(resource));
         return com.typesafe.config.ConfigFactory.parseResources(resource, DEFAULT_OPTS);
     }
 
