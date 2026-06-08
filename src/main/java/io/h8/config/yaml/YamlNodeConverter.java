@@ -68,12 +68,15 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
             throw new ConfigException.Parse(
                     origin(node, fileOrigin), "Exceeded maximum YAML document depth: " + maxDepth);
 
-        if (node instanceof MappingNode) return convertObject((MappingNode) node, depth, fileOrigin);
-        if (node instanceof SequenceNode) return convertList((SequenceNode) node, depth, fileOrigin);
+        if (node instanceof MappingNode)
+            return convertObject((MappingNode) node, depth, fileOrigin);
+        if (node instanceof SequenceNode)
+            return convertList((SequenceNode) node, depth, fileOrigin);
         if (node instanceof ScalarNode) return convertScalar((ScalarNode) node, fileOrigin);
 
         throw new ConfigException.Parse(
-                origin(node, fileOrigin), "Unexpected YAML node type: " + node.getClass().getName());
+                origin(node, fileOrigin),
+                "Unexpected YAML node type: " + node.getClass().getName());
     }
 
     private ConfigObject convertObject(MappingNode node, int depth, ConfigOrigin fileOrigin) {
@@ -112,9 +115,7 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
                     scalarValue(node), origin(node, fileOrigin).description());
         } catch (NumberFormatException e) {
             throw new ConfigException.Parse(
-                    origin(node, fileOrigin),
-                    "Invalid numeric value '" + node.getValue() + "'",
-                    e);
+                    origin(node, fileOrigin), "Invalid numeric value '" + node.getValue() + "'", e);
         }
     }
 
