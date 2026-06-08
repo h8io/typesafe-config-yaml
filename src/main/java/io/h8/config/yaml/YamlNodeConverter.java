@@ -41,8 +41,8 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
      *
      * @param node the root node of a YAML document
      * @return the corresponding {@link ConfigValue}
-     * @throws ConfigException.Parse if the node exceeds the configured depth limit or contains a
-     *     mapping with a non-scalar key
+     * @throws ConfigException.Parse if the node exceeds the configured depth limit, contains a
+     *     mapping with a non-scalar key, or contains a numeric scalar that overflows its Java type
      */
     @Override
     public ConfigValue apply(Node node) {
@@ -93,7 +93,12 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
     }
 
     private ConfigValue convertScalar(ScalarNode node) {
-        return ConfigValueFactory.fromAnyRef(scalarValue(node), origin(node).description());
+        try {
+            return ConfigValueFactory.fromAnyRef(scalarValue(node), origin(node).description());
+        } catch (NumberFormatException e) {
+            throw new ConfigException.Parse(
+                    origin(node), "Invalid numeric value '" + node.getValue() + "'", e);
+        }
     }
 
     private static Object scalarValue(ScalarNode node) {
