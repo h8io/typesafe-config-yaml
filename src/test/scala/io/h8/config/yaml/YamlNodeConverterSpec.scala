@@ -60,8 +60,8 @@ class YamlNodeConverterSpec extends AnyFlatSpec with Matchers {
     scalar("0o777") shouldBe 511L
   }
 
-  it should "throw on integer overflow" in {
-    a[NumberFormatException] should be thrownBy converter.apply(compose("9999999999999999999999999"))
+  it should "throw ConfigException.Parse on integer overflow" in {
+    a[ConfigException.Parse] should be thrownBy converter.apply(compose("9999999999999999999999999"))
   }
 
   // --- float ---
