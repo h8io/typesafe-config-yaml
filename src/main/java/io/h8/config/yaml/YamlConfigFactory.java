@@ -202,7 +202,7 @@ public final class YamlConfigFactory {
             return StreamSupport.stream(
                             Spliterators.spliteratorUnknownSize(composer, Spliterator.ORDERED),
                             false)
-                    .map(converter)
+                    .map(node -> converter.apply(node, origin))
                     .collect(Collectors.toUnmodifiableList());
         } catch (YamlEngineException e) {
             throw new ConfigException.Parse(origin, e.getMessage(), e);
