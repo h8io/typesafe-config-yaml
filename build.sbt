@@ -59,5 +59,7 @@ lazy val root = (project in file("."))
     javafmtStyle := JavaFormatterOptions.Style.AOSP,
     javafmtFormatterCompatibleJavaVersion := 21,
 
-    dependencyOverrides += "org.scala-lang" %% "scala3-library" % scalaVersion.value
+    dependencyOverrides += "org.scala-lang" %% "scala3-library" % scalaVersion.value,
+
+    Global / excludeLintKeys ++= Set(gitUncommittedChanges, scmInfo, gitDescribedVersion)
   )
