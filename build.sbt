@@ -1,8 +1,11 @@
 import com.github.sbt.jacoco.report.{JacocoReportSettings, JacocoThresholds}
 import com.google.googlejavaformat.java.JavaFormatterOptions
+import com.typesafe.sbt.SbtGit.autoImport.{gitDescribedVersion, gitUncommittedChanges}
 import sbt.*
 
 val ProjectName = "typesafe-config-yaml"
+
+Global / excludeLintKeys ++= Set(gitUncommittedChanges, scmInfo, gitDescribedVersion)
 
 lazy val root = (project in file("."))
   .settings(
@@ -59,7 +62,5 @@ lazy val root = (project in file("."))
     javafmtStyle := JavaFormatterOptions.Style.AOSP,
     javafmtFormatterCompatibleJavaVersion := 21,
 
-    dependencyOverrides += "org.scala-lang" %% "scala3-library" % scalaVersion.value,
-
-    Global / excludeLintKeys ++= Set(gitUncommittedChanges, scmInfo, gitDescribedVersion)
+    dependencyOverrides += "org.scala-lang" %% "scala3-library" % scalaVersion.value
   )
