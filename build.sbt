@@ -1,11 +1,8 @@
 import com.github.sbt.jacoco.report.{JacocoReportSettings, JacocoThresholds}
 import com.google.googlejavaformat.java.JavaFormatterOptions
-import com.typesafe.sbt.SbtGit.autoImport.{gitDescribedVersion, gitUncommittedChanges}
 import sbt.*
 
 val ProjectName = "typesafe-config-yaml"
-
-Global / excludeLintKeys ++= Set(gitUncommittedChanges, scmInfo, gitDescribedVersion)
 
 lazy val root = (project in file("."))
   .settings(
