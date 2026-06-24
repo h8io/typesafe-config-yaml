@@ -15,6 +15,11 @@ import java.util.function.Function;
  *
  * <p>Mapping nodes become {@link ConfigObject}, sequence nodes become {@link ConfigList}, and
  * scalar nodes become the closest Java primitive (according to the YAML 1.2 core schema).
+ *
+ * <p>When constructed with {@code stringsOnly = true}, all scalar values are kept as raw strings
+ * without type coercion. The only exception is an explicit YAML {@code null} tag — those still
+ * produce a Java {@code null} so that a literal {@code "null"} string is not mistaken for a missing
+ * value.
  */
 public final class YamlNodeConverter implements Function<Node, ConfigValue> {
     static final int DEFAULT_MAX_DEPTH = Integer.MAX_VALUE;
@@ -23,17 +28,33 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
     private static final ConfigOrigin DEFAULT_ORIGIN = ConfigOriginFactory.newSimple("yaml");
 
     private final int maxDepth;
+    private final boolean stringsOnly;
 
     /**
      * Creates a converter that rejects YAML documents deeper than {@code maxDepth} levels of
-     * nesting.
+     * nesting. Numeric and boolean scalars are coerced to their Java types.
      *
      * @param maxDepth maximum allowed nesting depth (must be &gt; 0)
      * @throws IllegalArgumentException if {@code maxDepth} is not positive
      */
     public YamlNodeConverter(int maxDepth) {
+        this(maxDepth, false);
+    }
+
+    /**
+     * Creates a converter with an explicit depth limit and an optional strings-only mode.
+     *
+     * <p>When {@code stringsOnly} is {@code true} all scalars are returned as raw strings; only an
+     * explicit YAML {@code null} tag still produces Java {@code null}.
+     *
+     * @param maxDepth maximum allowed nesting depth (must be &gt; 0)
+     * @param stringsOnly {@code true} to suppress numeric/boolean coercion
+     * @throws IllegalArgumentException if {@code maxDepth} is not positive
+     */
+    public YamlNodeConverter(int maxDepth, boolean stringsOnly) {
         if (maxDepth < 1) throw new IllegalArgumentException("maxDepth must be positive");
         this.maxDepth = maxDepth;
+        this.stringsOnly = stringsOnly;
     }
 
     /**
@@ -116,9 +137,12 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
         }
     }
 
-    private static Object scalarValue(ScalarNode node) {
+    private Object scalarValue(ScalarNode node) {
         String tag = node.getTag().getValue();
         String value = node.getValue();
+        if (stringsOnly) {
+            return "tag:yaml.org,2002:null".equals(tag) ? null : value;
+        }
         switch (tag) {
             case "tag:yaml.org,2002:null":
                 return null;

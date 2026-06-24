@@ -55,9 +55,21 @@ public final class YamlConfigFactory {
      * @throws IllegalArgumentException if {@code settings} enables recursive keys
      */
     public YamlConfigFactory(LoadSettings settings) {
+        this(settings, false);
+    }
+
+    /**
+     * Creates a factory with custom {@link LoadSettings}, no depth limit, and an optional
+     * strings-only mode.
+     *
+     * @param settings snakeyaml-engine load settings
+     * @param stringsOnly {@code true} to suppress numeric/boolean coercion for scalar values
+     * @throws IllegalArgumentException if {@code settings} enables recursive keys
+     */
+    public YamlConfigFactory(LoadSettings settings, boolean stringsOnly) {
         validateSettings(settings);
         this.settings = settings;
-        this.converter = YamlNodeConverter.DEFAULT;
+        this.converter = new YamlNodeConverter(YamlNodeConverter.DEFAULT_MAX_DEPTH, stringsOnly);
     }
 
     /**
@@ -67,8 +79,20 @@ public final class YamlConfigFactory {
      * @throws IllegalArgumentException if {@code maxDepth} is not positive
      */
     public YamlConfigFactory(int maxDepth) {
+        this(maxDepth, false);
+    }
+
+    /**
+     * Creates a factory with default {@link LoadSettings}, a maximum nesting depth, and an optional
+     * strings-only mode.
+     *
+     * @param maxDepth maximum allowed YAML nesting depth (must be &gt; 0)
+     * @param stringsOnly {@code true} to suppress numeric/boolean coercion for scalar values
+     * @throws IllegalArgumentException if {@code maxDepth} is not positive
+     */
+    public YamlConfigFactory(int maxDepth, boolean stringsOnly) {
         this.settings = DEFAULT_SETTINGS;
-        this.converter = new YamlNodeConverter(maxDepth);
+        this.converter = new YamlNodeConverter(maxDepth, stringsOnly);
     }
 
     /**
@@ -80,9 +104,23 @@ public final class YamlConfigFactory {
      *     maxDepth} is not positive
      */
     public YamlConfigFactory(LoadSettings settings, int maxDepth) {
+        this(settings, maxDepth, false);
+    }
+
+    /**
+     * Creates a factory with custom {@link LoadSettings}, a maximum nesting depth, and an optional
+     * strings-only mode.
+     *
+     * @param settings snakeyaml-engine load settings
+     * @param maxDepth maximum allowed YAML nesting depth (must be &gt; 0)
+     * @param stringsOnly {@code true} to suppress numeric/boolean coercion for scalar values
+     * @throws IllegalArgumentException if {@code settings} enables recursive keys, or if {@code
+     *     maxDepth} is not positive
+     */
+    public YamlConfigFactory(LoadSettings settings, int maxDepth, boolean stringsOnly) {
         validateSettings(settings);
         this.settings = settings;
-        this.converter = new YamlNodeConverter(maxDepth);
+        this.converter = new YamlNodeConverter(maxDepth, stringsOnly);
     }
 
     /**

@@ -158,4 +158,49 @@ class YamlNodeConverterSpec extends AnyFlatSpec with Matchers {
   it should "overwrite scalar with object when object comes last" in {
     converter.apply(compose("a: 42\na:\n  x: 1")).asInstanceOf[ConfigObject].toConfig.getLong("a.x") shouldBe 1L
   }
+
+  // --- strings-only mode ---
+
+  "YamlNodeConverter in strings-only mode" should "keep integers as strings" in {
+    val c = new YamlNodeConverter(1, true)
+    c.apply(compose("42")).unwrapped() shouldBe "42"
+    c.apply(compose("-1")).unwrapped() shouldBe "-1"
+    c.apply(compose("0xFF")).unwrapped() shouldBe "0xFF"
+    c.apply(compose("0o17")).unwrapped() shouldBe "0o17"
+  }
+
+  it should "keep floats as strings" in {
+    val c = new YamlNodeConverter(1, true)
+    c.apply(compose("3.14")).unwrapped() shouldBe "3.14"
+    c.apply(compose(".inf")).unwrapped() shouldBe ".inf"
+    c.apply(compose("-.inf")).unwrapped() shouldBe "-.inf"
+    c.apply(compose(".nan")).unwrapped() shouldBe ".nan"
+  }
+
+  it should "keep booleans as strings" in {
+    val c = new YamlNodeConverter(1, true)
+    c.apply(compose("true")).unwrapped() shouldBe "true"
+    c.apply(compose("false")).unwrapped() shouldBe "false"
+  }
+
+  it should "still return null for explicit null tag" in {
+    val c = new YamlNodeConverter(1, true)
+    c.apply(compose("null")).unwrapped() shouldBe null
+    c.apply(compose("~")).unwrapped() shouldBe null
+  }
+
+  it should "keep quoted 'null' string as a string, not null" in {
+    val c = new YamlNodeConverter(1, true)
+    c.apply(compose("'null'")).unwrapped() shouldBe "null"
+  }
+
+  it should "keep plain strings unchanged" in {
+    val c = new YamlNodeConverter(1, true)
+    c.apply(compose("hello")).unwrapped() shouldBe "hello"
+  }
+
+  it should "not throw on oversized integers (no number parsing)" in {
+    val c = new YamlNodeConverter(1, true)
+    c.apply(compose("9999999999999999999999999")).unwrapped() shouldBe "9999999999999999999999999"
+  }
 }
