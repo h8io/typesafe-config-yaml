@@ -23,7 +23,7 @@ import java.util.function.Function;
  */
 public final class YamlNodeConverter implements Function<Node, ConfigValue> {
     static final int DEFAULT_MAX_DEPTH = Integer.MAX_VALUE;
-    static final YamlNodeConverter DEFAULT = new YamlNodeConverter(DEFAULT_MAX_DEPTH, false);
+    static final YamlNodeConverter DEFAULT = new YamlNodeConverter(DEFAULT_MAX_DEPTH);
 
     private static final ConfigOrigin DEFAULT_ORIGIN = ConfigOriginFactory.newSimple("yaml");
 
