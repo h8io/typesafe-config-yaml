@@ -12,7 +12,7 @@ on:
 jobs:
   test:
     secrets: inherit
-    uses: h8io/gha/.github/workflows/test.yaml@v3
+    uses: h8io/gha/.github/workflows/test.yaml@v4
     with:
       java-version: 21
       timeout-minutes: 5
