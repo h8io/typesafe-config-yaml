@@ -239,7 +239,7 @@ public final class ConfigLoader {
          * @throws IllegalArgumentException if {@code maxDepth} is not positive
          */
         public Builder yamlMaxDepth(int maxDepth) {
-            yamlFactory = new YamlConfigFactory(maxDepth);
+            yamlFactory = YamlConfigFactory.builder().maxDepth(maxDepth).build();
             return this;
         }
 
