@@ -9,6 +9,7 @@ import org.snakeyaml.engine.v2.schema.CoreSchema
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import scala.annotation.nowarn
 
 class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
 
@@ -155,29 +156,55 @@ class YamlConfigFactorySpec extends AnyFlatSpec with Matchers {
   // ── parameterized factory ──────────────────────────────────────────────────
 
   "YamlConfigFactory(maxDepth)" should "throw on exceeded depth" in {
-    a[ConfigException.Parse] should be thrownBy new YamlConfigFactory(1).parseString("a:\n  b: 1")
+    a[ConfigException.Parse] should be thrownBy
+      YamlConfigFactory.builder().maxDepth(1).build().parseString("a:\n  b: 1")
   }
 
   "YamlConfigFactory(LoadSettings)" should "use custom settings" in {
     val settings = LoadSettings.builder().setSchema(new CoreSchema()).build()
-    val docs = new YamlConfigFactory(settings).parseString("x: 1")
+    val docs = YamlConfigFactory.builder().settings(settings).build().parseString("x: 1")
     docs.get(0).asInstanceOf[ConfigObject].toConfig.getInt("x") shouldBe 1
   }
 
   it should "reject settings with allowRecursiveKeys enabled" in {
     val settings = LoadSettings.builder().setAllowRecursiveKeys(true).build()
-    an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(settings)
+    an[IllegalArgumentException] should be thrownBy YamlConfigFactory.builder().settings(settings).build()
   }
 
   "YamlConfigFactory(LoadSettings, maxDepth)" should "respect both parameters" in {
     val settings = LoadSettings.builder().setSchema(new CoreSchema()).build()
-    a[ConfigException.Parse] should be thrownBy new YamlConfigFactory(settings, 1).parseString("a:\n  b: 1")
+    a[ConfigException.Parse] should be thrownBy
+      YamlConfigFactory.builder().settings(settings).maxDepth(1).build().parseString("a:\n  b: 1")
   }
 
   it should "reject settings with allowRecursiveKeys enabled" in {
     val settings = LoadSettings.builder().setAllowRecursiveKeys(true).build()
-    an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(settings, 10)
+    an[IllegalArgumentException] should be thrownBy YamlConfigFactory.builder().settings(settings).maxDepth(10).build()
   }
+
+  // ── deprecated constructors ────────────────────────────────────────────────
+
+  @nowarn("cat=deprecation")
+  def exerciseDeprecatedConstructors(): Unit = {
+    val settings = LoadSettings.builder().setSchema(new CoreSchema()).build()
+    def cfg(f: YamlConfigFactory) = f.parseString("x: 1").get(0).asInstanceOf[ConfigObject].toConfig
+    cfg(new YamlConfigFactory(5)).getLong("x") shouldBe 1L
+    cfg(new YamlConfigFactory(5, false)).getLong("x") shouldBe 1L
+    cfg(new YamlConfigFactory(5, true)).getString("x") shouldBe "1"
+    cfg(new YamlConfigFactory(settings)).getLong("x") shouldBe 1L
+    cfg(new YamlConfigFactory(settings, false)).getLong("x") shouldBe 1L
+    cfg(new YamlConfigFactory(settings, true)).getString("x") shouldBe "1"
+    cfg(new YamlConfigFactory(settings, 5)).getLong("x") shouldBe 1L
+    cfg(new YamlConfigFactory(settings, 5, true)).getString("x") shouldBe "1"
+    val bad = LoadSettings.builder().setAllowRecursiveKeys(true).build()
+    an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(bad)
+    an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(bad, true)
+    an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(bad, 5)
+    (an[IllegalArgumentException] should be thrownBy new YamlConfigFactory(bad, 5, true)): Unit
+  }
+
+  "deprecated constructors" should "delegate correctly to the private constructor" in
+    exerciseDeprecatedConstructors()
 
   // ── helpers ────────────────────────────────────────────────────────────────
 

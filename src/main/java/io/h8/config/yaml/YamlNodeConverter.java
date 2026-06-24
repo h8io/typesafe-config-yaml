@@ -42,6 +42,18 @@ public final class YamlNodeConverter implements Function<Node, ConfigValue> {
     }
 
     /**
+     * Creates a converter with no depth limit and an optional strings-only mode.
+     *
+     * <p>When {@code stringsOnly} is {@code true} all scalars are returned as raw strings; only an
+     * explicit YAML {@code null} tag still produces Java {@code null}.
+     *
+     * @param stringsOnly {@code true} to suppress numeric/boolean coercion
+     */
+    public YamlNodeConverter(boolean stringsOnly) {
+        this(DEFAULT_MAX_DEPTH, stringsOnly);
+    }
+
+    /**
      * Creates a converter with an explicit depth limit and an optional strings-only mode.
      *
      * <p>When {@code stringsOnly} is {@code true} all scalars are returned as raw strings; only an
