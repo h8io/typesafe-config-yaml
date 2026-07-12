@@ -29,7 +29,7 @@ lazy val root = (project in file("."))
 
     versionScheme := Some("semver-spec"),
 
-    scalaVersion := "3.3.7",
+    scalaVersion := "3.3.8",
 
     crossPaths := false,
     autoScalaLibrary := false,
