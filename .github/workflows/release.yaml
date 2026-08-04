@@ -11,8 +11,6 @@ permissions:
 jobs:
   release:
     secrets: inherit
-    uses: h8io/gha/.github/workflows/release.yaml@v4
+    uses: h8io/gha/.github/workflows/release.yaml@v6
     with:
       java-version: 21
-      debug: true
-      verbose: true
