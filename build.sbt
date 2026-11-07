@@ -47,7 +47,7 @@ lazy val root = (project in file("."))
     ),
 
     libraryDependencies ++= Seq(
-      "com.typesafe" % "config" % "1.4.9",
+      "com.typesafe" % "config" % "1.4.10",
       "org.snakeyaml" % "snakeyaml-engine" % "3.2",
       "org.scalatest" %% "scalatest" % "3.2.20" % Test
     ),
